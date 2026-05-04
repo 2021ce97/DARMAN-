@@ -1,4 +1,4 @@
-# 🏥 MediConnect (HealthLink) - Healthcare Platform for Afghanistan
+# 🏥 DARMAN  - Healthcare Platform for Afghanistan
 
 A comprehensive healthcare discovery and telemedicine platform connecting patients with healthcare providers across Afghanistan.
 
