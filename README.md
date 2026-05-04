@@ -417,10 +417,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Team
 
-- **Project Lead**: [Your Name]
-- **Backend Developer**: [Your Name]
-- **Frontend Developer**: [Your Name]
-- **UI/UX Designer**: [Your Name]
+- **Project Lead**: [Fazlullah Sardarkhil]
+- **Backend Developer**: [Fazlullah Sardarkhil]
+- **Frontend Developer**: [Fazlullah Sardarkhil]
+- **UI/UX Designer**: [Fazlullah Sardarkhil]
 
 ---
 
