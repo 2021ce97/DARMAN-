@@ -1,0 +1,36 @@
+name: Deploy Flutter Web to Firebase Hosting
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'medi_connect/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: 'stable'
+
+      - name: Install dependencies
+        working-directory: medi_connect
+        run: flutter pub get
+
+      - name: Build web
+        working-directory: medi_connect
+        run: flutter build web --release --dart-define=ENV=production
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: mediconnect-4b155
+          entryPoint: medi_connect

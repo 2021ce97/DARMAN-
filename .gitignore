@@ -1,0 +1,76 @@
+# ── Secrets & Credentials ─────────────────────────────────────────────────────
+backend/serviceAccountKey.json
+backend/.env
+backend/.env.production
+backend/.env.local
+**/*.pem
+**/*.key
+**/*.p12
+
+# ── Node.js ───────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# ── Flutter ───────────────────────────────────────────────────────────────────
+medi_connect/.dart_tool/
+medi_connect/.flutter-plugins
+medi_connect/.flutter-plugins-dependencies
+medi_connect/build/
+medi_connect/.packages
+medi_connect/pubspec.lock
+medi_connect/android/.gradle/
+medi_connect/android/local.properties
+medi_connect/android/key.properties
+medi_connect/ios/Pods/
+medi_connect/ios/.symlinks/
+medi_connect/ios/Flutter/Flutter.framework
+medi_connect/ios/Flutter/Flutter.podspec
+medi_connect/ios/Runner.xcworkspace/
+medi_connect/macos/Pods/
+medi_connect/macos/.symlinks/
+medi_connect/windows/flutter/generated_plugin_registrant.cc
+medi_connect/windows/flutter/generated_plugin_registrant.h
+medi_connect/windows/flutter/generated_plugins.cmake
+medi_connect/linux/flutter/generated_plugin_registrant.cc
+medi_connect/linux/flutter/generated_plugin_registrant.h
+medi_connect/linux/flutter/generated_plugins.cmake
+
+# ── Next.js Admin Dashboard ───────────────────────────────────────────────────
+admin-dashboard/.next/
+admin-dashboard/out/
+admin-dashboard/node_modules/
+
+# ── Firebase ──────────────────────────────────────────────────────────────────
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebaserc.local
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.iml
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Temp / Build ──────────────────────────────────────────────────────────────
+dist/
+tmp/
+temp/
+*.tmp
+analyze*.txt
