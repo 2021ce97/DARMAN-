@@ -350,12 +350,78 @@ const createMockQuery = (collectionName, filters, limitN = 100) => ({
 });
 
 let _firestoreInstance = null;
+let _firestoreAvailable = null; // null = unknown, true = available, false = not available
+
+// Smart Firestore wrapper: tries real Firestore, falls back to mock on NOT_FOUND
+const createSmartCollection = (realDb, collectionName) => {
+  const tryReal = async (fn) => {
+    if (_firestoreAvailable === false) {
+      return createMockCollection(collectionName);
+    }
+    try {
+      const result = await fn();
+      _firestoreAvailable = true;
+      return result;
+    } catch (e) {
+      if (e.code === 5 || e.message?.includes('NOT_FOUND') || e.message?.includes('does not exist')) {
+        if (_firestoreAvailable !== false) {
+          console.warn('⚠️  Firestore database not found — falling back to mock data');
+          console.warn('   Create the database at: https://console.firebase.google.com/project/mediconnect-4b155/firestore');
+          _firestoreAvailable = false;
+          seedMockData();
+        }
+        return createMockCollection(collectionName);
+      }
+      throw e;
+    }
+  };
+
+  return {
+    doc: (id) => ({
+      get: () => tryReal(() => realDb.collection(collectionName).doc(id).get()),
+      set: (data, opts) => tryReal(() => realDb.collection(collectionName).doc(id).set(data, opts)),
+      update: (data) => tryReal(() => realDb.collection(collectionName).doc(id).update(data)),
+      collection: (sub) => createSmartCollection(realDb, `${collectionName}/${id}/${sub}`),
+    }),
+    add: (data) => tryReal(() => realDb.collection(collectionName).add(data)),
+    where: (f, op, v) => createSmartQuery(realDb, collectionName, [{ f, op, v }]),
+    orderBy: () => createSmartQuery(realDb, collectionName, []),
+    limit: (n) => createSmartQuery(realDb, collectionName, [], n),
+    get: () => tryReal(() => realDb.collection(collectionName).get()),
+  };
+};
+
+const createSmartQuery = (realDb, collectionName, filters, limitN = 100) => ({
+  where: (f, op, v) => createSmartQuery(realDb, collectionName, [...filters, { f, op, v }], limitN),
+  orderBy: () => createSmartQuery(realDb, collectionName, filters, limitN),
+  limit: (n) => createSmartQuery(realDb, collectionName, filters, n),
+  get: async () => {
+    if (_firestoreAvailable === false) {
+      return createMockQuery(collectionName, filters.map(({f,op,v}) => ({field:f,op,value:v})), limitN).get();
+    }
+    try {
+      let q = realDb.collection(collectionName);
+      for (const { f, op, v } of filters) q = q.where(f, op, v);
+      const result = await q.limit(limitN).get();
+      _firestoreAvailable = true;
+      return result;
+    } catch (e) {
+      if (e.code === 5 || e.message?.includes('NOT_FOUND') || e.message?.includes('does not exist')) {
+        if (_firestoreAvailable !== false) {
+          console.warn('⚠️  Firestore database not found — falling back to mock data');
+          _firestoreAvailable = false;
+          seedMockData();
+        }
+        return createMockQuery(collectionName, filters.map(({f,op,v}) => ({field:f,op,value:v})), limitN).get();
+      }
+      throw e;
+    }
+  },
+});
 
 export const getFirestore = () => {
   if (mockMode) {
-    return {
-      collection: (name) => createMockCollection(name),
-    };
+    return { collection: (name) => createMockCollection(name) };
   }
   if (!_firestoreInstance) {
     _firestoreInstance = admin.firestore();
@@ -365,7 +431,11 @@ export const getFirestore = () => {
       // Settings already applied, ignore
     }
   }
-  return _firestoreInstance;
+  // Return smart wrapper that falls back to mock if Firestore DB doesn't exist
+  return {
+    collection: (name) => createSmartCollection(_firestoreInstance, name),
+    batch: () => _firestoreInstance.batch(),
+  };
 };
 
 export const getAuth = () => {
