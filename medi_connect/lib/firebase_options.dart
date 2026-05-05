@@ -41,8 +41,8 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyOMSHiwIxanAnZTjlXU7Dy6iCHUqE-d8ZA',
-    appId: '1:119821773199:web:7cf59ad2bacdcce2dd83fa',
+    apiKey: 'AIzaSyDM5MiwIxanAn2TjlXU7Dy6iCHUqE-d0ZA',
+    appId: '1:119821773199:web:7cc5bf79d5b9b5f5dd03fa',
     messagingSenderId: '119821773199',
     projectId: 'mediconnect-4b155',
     authDomain: 'mediconnect-4b155.firebaseapp.com',

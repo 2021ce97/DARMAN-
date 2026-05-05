@@ -40,7 +40,7 @@ class DoctorService {
       
       return [];
     } catch (e) {
-      debugdebugPrint('Error fetching doctors from API: $e');
+      debugPrint('Error fetching doctors from API: $e');
       return [];
     }
   }
@@ -56,7 +56,7 @@ class DoctorService {
       
       return null;
     } catch (e) {
-      debugdebugPrint('Error fetching doctor from API: $e');
+      debugPrint('Error fetching doctor from API: $e');
       return null;
     }
   }
@@ -75,7 +75,7 @@ class DoctorService {
       
       return null;
     } catch (e) {
-      debugdebugPrint('Error fetching availability from API: $e');
+      debugPrint('Error fetching availability from API: $e');
       return null;
     }
   }
@@ -91,7 +91,7 @@ class DoctorService {
       
       return [];
     } catch (e) {
-      debugdebugPrint('Error fetching specialties from API: $e');
+      debugPrint('Error fetching specialties from API: $e');
       return [];
     }
   }
@@ -323,5 +323,6 @@ final specialtiesFromApiProvider = FutureProvider.autoDispose<List<String>>((ref
   final service = ref.watch(doctorServiceProvider);
   return await service.getSpecialtiesFromApi();
 });
+
 
 

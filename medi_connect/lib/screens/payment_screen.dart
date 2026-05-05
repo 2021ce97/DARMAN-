@@ -62,8 +62,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
         paymentMethod: _selectedMethod,
       );
 
-      setState(() => _paymentIntent = intent);
-
       // For HesabPay, show payment URL (in real app, open in webview)
       if (_selectedMethod == 'hesabpay') {
         _showPaymentDialog(intent);
