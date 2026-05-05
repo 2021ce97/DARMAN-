@@ -38,43 +38,29 @@ class AuthService {
   Future<Map<String, dynamic>> signInWithEmail(
       String email, String password) async {
     try {
-      // Sign in with Firebase Auth
+      // Sign in with Firebase Auth directly
       final credential = await _auth.signInWithEmailAndPassword(
           email: email, password: password);
 
       // Get Firebase ID token
       final token = await credential.user?.getIdToken();
-      
+
       if (token != null) {
         _apiClient.setAuthToken(token);
-        
-        // Save token to local storage
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
 
-        // Verify token with backend
-        final response = await _apiClient.post('/auth/verify-token', body: {
-          'token': token,
-        });
-
-        if (response.success) {
-          return {
-            'success': true,
-            'user': credential.user,
-            'data': response.data,
-          };
+        // Try to sync with backend — but don't block login if it fails
+        try {
+          await _apiClient.post('/auth/verify-token', body: {'token': token});
+        } catch (_) {
+          // Backend sync failed — login still succeeds via Firebase Auth
         }
       }
 
-      return {
-        'success': true,
-        'user': credential.user,
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': true, 'user': credential.user};
+    } on Exception catch (e) {
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -83,24 +69,8 @@ class AuthService {
   Future<Map<String, dynamic>> signUpWithEmail(
       String email, String password, String name, String phone) async {
     try {
-      // Register with backend first
-      final registerResponse = await _apiClient.post('/auth/register', body: {
-        'email': email,
-        'password': password,
-        'fullName': name,
-        'phone': phone,
-        'role': 'patient',
-      });
-
-      if (!registerResponse.success) {
-        return {
-          'success': false,
-          'error': registerResponse.error ?? 'Registration failed',
-        };
-      }
-
-      // Sign in with Firebase Auth
-      final credential = await _auth.signInWithEmailAndPassword(
+      // Create Firebase Auth user directly (no backend dependency)
+      final credential = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
 
       // Set display name
@@ -108,25 +78,44 @@ class AuthService {
 
       // Get Firebase ID token
       final token = await credential.user?.getIdToken();
-      
+
       if (token != null) {
         _apiClient.setAuthToken(token);
-        
-        // Save token to local storage
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
       }
 
-      return {
-        'success': true,
-        'user': credential.user,
-        'data': registerResponse.data,
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      // Try to sync with backend — but don't block registration if it fails
+      try {
+        await _apiClient.post('/auth/register', body: {
+          'email': email,
+          'password': password,
+          'fullName': name,
+          'phone': phone,
+          'role': 'patient',
+        });
+      } catch (_) {
+        // Backend sync failed — registration still succeeds via Firebase Auth
+      }
+
+      // Also save user to Firestore if available
+      try {
+        await _db.collection('users').doc(credential.user!.uid).set({
+          'uid': credential.user!.uid,
+          'email': email,
+          'fullName': name,
+          'phone': phone,
+          'role': 'patient',
+          'status': 'active',
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+      } catch (_) {
+        // Firestore not available yet — that's OK
+      }
+
+      return {'success': true, 'user': credential.user};
+    } on Exception catch (e) {
+      return {'success': false, 'error': e.toString()};
     }
   }
 
