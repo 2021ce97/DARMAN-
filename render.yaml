@@ -1,12 +1,13 @@
 services:
   - type: web
     name: darman-api
-    runtime: node
+    env: node
     plan: free
     rootDir: backend
-    buildCommand: npm ci --only=production
+    buildCommand: npm install --production
     startCommand: node src/server.js
     healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
@@ -19,7 +20,7 @@ services:
       - key: FIREBASE_PRIVATE_KEY
         sync: false
       - key: JWT_SECRET
-        generateValue: true
+        value: darman-mediconnect-2026-secret-key
       - key: RATE_LIMIT_MAX
         value: 100
       - key: RATE_LIMIT_TIMEWINDOW
