@@ -36,10 +36,18 @@ await fastify.register(helmet, {
 });
 
 await fastify.register(cors, {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
+  origin: process.env.NODE_ENV === 'production'
+    ? [
+        'https://mediconnect-4b155.web.app',
+        'https://mediconnect-4b155.firebaseapp.com',
+        'https://darman-admin.vercel.app',
+        /\.onrender\.com$/,   // allow Render preview URLs
+        /\.vercel\.app$/,     // allow Vercel preview URLs
+      ]
     : true,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 });
 
 await fastify.register(rateLimit, {
