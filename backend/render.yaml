@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: darman-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: FIREBASE_PROJECT_ID
+        value: mediconnect-4b155
+      - key: FIREBASE_CLIENT_EMAIL
+        value: firebase-adminsdk-fbsvc@mediconnect-4b155.iam.gserviceaccount.com
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false  # Set this manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RATE_LIMIT_MAX
+        value: 100
+      - key: RATE_LIMIT_TIMEWINDOW
+        value: 60000

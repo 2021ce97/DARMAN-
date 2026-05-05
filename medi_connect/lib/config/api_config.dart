@@ -5,8 +5,8 @@ class ApiConfig {
 
   // ── URLs ──────────────────────────────────────────────────────────────────
   
-  /// Production URL — replace with your deployed backend URL
-  static const String productionUrl = 'https://YOUR-BACKEND-URL.railway.app/api/v1';
+  /// Production URL — your deployed backend on Render.com
+  static const String productionUrl = 'https://darman-api.onrender.com/api/v1';
   
   /// Local development
   static const String localUrl = 'http://localhost:3000/api/v1';
