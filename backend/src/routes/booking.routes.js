@@ -1,5 +1,5 @@
 import { getFirestore } from '../config/firebase.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
 export default async function bookingRoutes(fastify, options) {
   const db = getFirestore();
@@ -213,6 +213,107 @@ export default async function bookingRoutes(fastify, options) {
       return reply.status(500).send({
         error: { message: error.message, statusCode: 500 },
       });
+    }
+  });
+
+  // Get bookings for doctor (doctor dashboard)
+  fastify.get('/doctor', { preHandler: [authenticate, authorize('doctor')] }, async (request, reply) => {
+    try {
+      const { status, page = 1, limit = 20 } = request.query;
+
+      let query = db.collection('bookings').where('doctorId', '==', request.user.uid);
+
+      if (status) {
+        query = query.where('status', '==', status);
+      }
+
+      const snapshot = await query
+        .orderBy('createdAt', 'desc')
+        .limit(parseInt(limit))
+        .get();
+
+      const bookings = [];
+
+      for (const doc of snapshot.docs) {
+        const bookingData = doc.data();
+        const patientDoc = await db.collection('users').doc(bookingData.patientId).get();
+
+        bookings.push({
+          id: doc.id,
+          ...bookingData,
+          patient: patientDoc.exists ? patientDoc.data() : null,
+        });
+      }
+
+      return reply.send({
+        success: true,
+        data: bookings,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: bookings.length,
+        },
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        error: { message: error.message, statusCode: 500 },
+      });
+    }
+  });
+
+  // Doctor updates booking status (accept/reject/complete)
+  fastify.put('/:id/status', { preHandler: [authenticate, authorize('doctor')] }, async (request, reply) => {
+    try {
+      const { id } = request.params;
+      const { status } = request.body;
+
+      if (!status) {
+        return reply.status(400).send({ error: { message: 'Status is required', statusCode: 400 } });
+      }
+
+      const allowed = ['accepted', 'rejected', 'completed'];
+      if (!allowed.includes(status)) {
+        return reply.status(400).send({ error: { message: 'Invalid status', statusCode: 400 } });
+      }
+
+      const bookingDoc = await db.collection('bookings').doc(id).get();
+      if (!bookingDoc.exists) {
+        return reply.status(404).send({ error: { message: 'Booking not found', statusCode: 404 } });
+      }
+
+      const bookingData = bookingDoc.data();
+
+      if (bookingData.doctorId !== request.user.uid) {
+        return reply.status(403).send({ error: { message: 'Forbidden', statusCode: 403 } });
+      }
+
+      await db.collection('bookings').doc(id).update({ status, updatedAt: new Date().toISOString() });
+
+      // If doctor rejected, make slot available again
+      if (status === 'rejected') {
+        const availabilityDoc = await db.collection('doctors')
+          .doc(bookingData.doctorId)
+          .collection('availability')
+          .doc(bookingData.date)
+          .get();
+
+        if (availabilityDoc.exists) {
+          const slots = availabilityDoc.data().slots || [];
+          const updatedSlots = slots.map(s => s.time === bookingData.timeSlot ? { ...s, available: true } : s);
+
+          await db.collection('doctors')
+            .doc(bookingData.doctorId)
+            .collection('availability')
+            .doc(bookingData.date)
+            .update({ slots: updatedSlots });
+        }
+      }
+
+      return reply.send({ success: true, message: 'Booking status updated' });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: { message: error.message, statusCode: 500 } });
     }
   });
 }
