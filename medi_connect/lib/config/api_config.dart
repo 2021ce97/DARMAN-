@@ -5,8 +5,8 @@ class ApiConfig {
 
   // ── URLs ──────────────────────────────────────────────────────────────────
   
-  /// Production URL — your deployed backend on Render.com
-  static const String productionUrl = 'https://darman-api.onrender.com/api/v1';
+  /// Production URL — live backend on Render.com
+  static const String productionUrl = 'https://darman.onrender.com/api/v1';
   
   /// Local development
   static const String localUrl = 'http://localhost:3000/api/v1';

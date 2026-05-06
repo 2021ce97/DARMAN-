@@ -55,6 +55,27 @@ await fastify.register(rateLimit, {
   timeWindow: parseInt(process.env.RATE_LIMIT_TIMEWINDOW) || 60000,
 });
 
+// Root route - API info
+fastify.get('/', async (request, reply) => {
+  return {
+    name: 'DARMAN Healthcare API',
+    version: '1.0.0',
+    status: 'running',
+    description: 'Healthcare platform for Afghanistan',
+    docs: '/health',
+    endpoints: {
+      health: '/health',
+      doctors: '/api/v1/doctors',
+      hospitals: '/api/v1/hospitals',
+      labs: '/api/v1/labs',
+      pharmacies: '/api/v1/pharmacies',
+      search: '/api/v1/search',
+      auth: '/api/v1/auth',
+      bookings: '/api/v1/bookings',
+    },
+  };
+});
+
 // Health check route
 fastify.get('/health', async (request, reply) => {
   return { 
