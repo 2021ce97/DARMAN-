@@ -350,7 +350,7 @@ const createMockQuery = (collectionName, filters, limitN = 100) => ({
 });
 
 let _firestoreInstance = null;
-let _firestoreAvailable = null; // null = unknown, true = available, false = not available
+let _firestoreAvailable = null;
 
 // Smart Firestore wrapper: tries real Firestore, falls back to mock on NOT_FOUND
 const createSmartCollection = (realDb, collectionName) => {
@@ -426,7 +426,10 @@ export const getFirestore = () => {
   if (!_firestoreInstance) {
     _firestoreInstance = admin.firestore();
     try {
-      _firestoreInstance.settings({ ignoreUndefinedProperties: true });
+      _firestoreInstance.settings({ 
+        ignoreUndefinedProperties: true,
+        databaseId: 'default',
+      });
     } catch (e) {
       // Settings already applied, ignore
     }
