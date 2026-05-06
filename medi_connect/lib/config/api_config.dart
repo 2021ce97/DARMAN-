@@ -6,7 +6,7 @@ class ApiConfig {
   // ── URLs ──────────────────────────────────────────────────────────────────
   
   /// Production URL — live backend on Render.com
-  static const String productionUrl = 'https://darman.onrender.com/api/v1';
+  static const String productionUrl = 'https://darman-api.onrender.com/api/v1';
   
   /// Local development
   static const String localUrl = 'http://localhost:3000/api/v1';
@@ -17,8 +17,12 @@ class ApiConfig {
   /// Physical device on same WiFi (your computer's IP)
   static const String physicalDeviceUrl = 'http://192.168.1.12:3000/api/v1';
 
-  /// Active base URL — change _env to 'production' for live deployment
+  /// Override with compile-time define: `--dart-define=API_BASE=https://...`
+  static const String _apiBaseFromDefine = String.fromEnvironment('API_BASE', defaultValue: '');
+
+  /// Active base URL — priority: API_BASE (dart-define) -> env -> local
   static String get baseUrl {
+    if (_apiBaseFromDefine.isNotEmpty) return _apiBaseFromDefine;
     if (_env == 'production') return productionUrl;
     return localUrl;
   }
