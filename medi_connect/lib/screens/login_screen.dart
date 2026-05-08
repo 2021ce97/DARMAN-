@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,7 +46,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        context.go('/');
+        // Read role + ban status and route accordingly
+        try {
+          final user = result['user'];
+          final uid = user?.uid as String?;
+          if (uid != null) {
+            final doc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(uid)
+                .get();
+
+            final data = doc.data() ?? {};
+            final isBanned = data['isBanned'] == true;
+
+            // ── Ban enforcement ──────────────────────────────────────
+            if (isBanned) {
+              // Sign out immediately so they can't get past login
+              await ref.read(authServiceProvider).signOut();
+              if (mounted) {
+                setState(() => _errorMessage =
+                    'Your account has been suspended. Please contact support at support@darman.af');
+              }
+              return;
+            }
+
+            final role = data['role'] as String? ?? 'patient';
+            if (mounted) {
+              if (role == 'doctor') {
+                context.go('/doctor');
+              } else if (role == 'admin') {
+                context.go('/admin');
+              } else {
+                context.go('/');
+              }
+            }
+          } else {
+            context.go('/');
+          }
+        } catch (_) {
+          context.go('/');
+        }
       } else {
         setState(() {
           _errorMessage = _friendlyError(result['error']?.toString() ?? 'Login failed');
@@ -209,6 +249,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Expanded(child: Divider(color: AppColors.divider)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('or', style: TextStyle(color: AppColors.textHint, fontSize: 13)),
+                  ),
+                  const Expanded(child: Divider(color: AppColors.divider)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () => context.push('/register-doctor'),
+                icon: const Icon(Icons.medical_services_rounded, size: 18),
+                label: const Text('Join as a Doctor'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ],
           ),

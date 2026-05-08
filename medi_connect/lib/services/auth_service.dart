@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
+import 'fcm_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -58,6 +59,17 @@ class AuthService {
         }
       }
 
+      // Save FCM token to Firestore so we can send push notifications
+      try {
+        final fcmToken = FCMService().fcmToken;
+        if (fcmToken != null && credential.user != null) {
+          await _db
+              .collection('users')
+              .doc(credential.user!.uid)
+              .set({'fcmToken': fcmToken}, SetOptions(merge: true));
+        }
+      } catch (_) {}
+
       return {'success': true, 'user': credential.user};
     } on Exception catch (e) {
       return {'success': false, 'error': e.toString()};
@@ -112,6 +124,17 @@ class AuthService {
       } catch (_) {
         // Firestore not available yet — that's OK
       }
+
+      // Save FCM token
+      try {
+        final fcmToken = FCMService().fcmToken;
+        if (fcmToken != null && credential.user != null) {
+          await _db
+              .collection('users')
+              .doc(credential.user!.uid)
+              .set({'fcmToken': fcmToken}, SetOptions(merge: true));
+        }
+      } catch (_) {}
 
       return {'success': true, 'user': credential.user};
     } on Exception catch (e) {
@@ -178,9 +201,19 @@ class AuthService {
   // ── Sign Out ──────────────────────────────────────────────────────────────
 
   Future<void> signOut() async {
+    // Clear FCM token from Firestore
+    try {
+      final uid = _auth.currentUser?.uid;
+      if (uid != null) {
+        await _db
+            .collection('users')
+            .doc(uid)
+            .set({'fcmToken': FieldValue.delete()}, SetOptions(merge: true));
+      }
+    } catch (_) {}
+
     await _auth.signOut();
     _apiClient.setAuthToken(null);
-    
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
   }

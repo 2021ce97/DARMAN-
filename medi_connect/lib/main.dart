@@ -6,10 +6,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'providers/theme_provider.dart';
+import 'providers/role_provider.dart';
 import 'screens/main_scaffold.dart';
 import 'screens/doctor_listing_screen.dart';
 import 'screens/doctor_profile_screen.dart';
 import 'models/doctor_model.dart';
+import 'models/appointment_model.dart';
 import 'screens/booking_summary_screen.dart';
 import 'screens/health_records_screen.dart';
 import 'screens/help_screen.dart';
@@ -27,6 +29,17 @@ import 'screens/lab_tests_screen.dart';
 import 'screens/pharmacy_screen.dart';
 import 'screens/chat_screen.dart';
 import 'services/auth_service.dart';
+// Doctor screens
+import 'screens/doctor/doctor_scaffold.dart';
+import 'screens/doctor/doctor_appointment_detail_screen.dart';
+import 'screens/doctor/write_prescription_screen.dart';
+import 'screens/doctor/doctor_register_screen.dart';
+// Admin screens
+import 'screens/admin/admin_dashboard_screen.dart';
+// FCM
+import 'services/fcm_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +55,22 @@ void main() async {
     ),
   );
 
+  // ── FCM: initialize push notifications ─────────────────────────────────
+  try {
+    await FCMService().initialize();
+    // Save FCM token to current user's Firestore doc (if already logged in)
+    final user = FirebaseAuth.instance.currentUser;
+    final token = FCMService().fcmToken;
+    if (user != null && token != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({'fcmToken': token}, SetOptions(merge: true));
+    }
+  } catch (e) {
+    debugPrint('FCM init error (non-fatal): $e');
+  }
+
   runApp(const ProviderScope(child: MediConnectApp()));
 }
 
@@ -53,19 +82,30 @@ class MediConnectApp extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
     final themeMode = ref.watch(themeProvider);
 
+    final userRoleAsync = ref.watch(userRoleProvider);
+
     final router = GoRouter(
       initialLocation: '/',
       redirect: (context, state) {
         final isLoggedIn = authState.value != null;
-        final isAuthPath = state.matchedLocation == '/login' ||
-            state.matchedLocation == '/register';
+        final loc = state.matchedLocation;
+        final isAuthPath = loc == '/login' ||
+            loc == '/register' ||
+            loc == '/register-doctor';
+
         if (!isLoggedIn && !isAuthPath) return '/login';
-        if (isLoggedIn && isAuthPath) return '/';
+        if (isLoggedIn && isAuthPath) {
+          // Role-based redirect after login
+          final role = userRoleAsync.value ?? UserRole.patient;
+          if (role.isDoctor) return '/doctor';
+          if (role.isAdmin) return '/admin';
+          return '/';
+        }
         return null;
       },
       routes: [
         // ── Main tabs ──────────────────────────────────────────────────────
-        GoRoute(path: '/', builder: (_, __) => const MainScaffold(initialIndex: 0)),
+        GoRoute(path: '/', builder: (_, _) => const MainScaffold(initialIndex: 0)),
         GoRoute(path: '/appointments', builder: (_, __) => const MainScaffold(initialIndex: 2)),
         GoRoute(path: '/profile', builder: (_, __) => const MainScaffold(initialIndex: 3)),
         GoRoute(path: '/search', builder: (_, __) => const MainScaffold(initialIndex: 1)),
@@ -151,6 +191,56 @@ class MediConnectApp extends ConsumerWidget {
 
         // ── Help ───────────────────────────────────────────────────────────
         GoRoute(path: '/help', builder: (_, __) => const HelpScreen()),
+
+        // ── Doctor Registration ────────────────────────────────────────────
+        GoRoute(
+          path: '/register-doctor',
+          builder: (_, __) => const DoctorRegisterScreen(),
+        ),
+
+        // ── Doctor Shell (tabs) ───────────────────────────────────────────
+        GoRoute(
+          path: '/doctor',
+          builder: (_, __) => const DoctorScaffold(initialIndex: 0),
+        ),
+        GoRoute(
+          path: '/doctor/appointments',
+          builder: (_, __) => const DoctorScaffold(initialIndex: 1),
+        ),
+        GoRoute(
+          path: '/doctor/patients',
+          builder: (_, __) => const DoctorScaffold(initialIndex: 2),
+        ),
+        GoRoute(
+          path: '/doctor/profile',
+          builder: (_, __) => const DoctorScaffold(initialIndex: 3),
+        ),
+
+        // ── Doctor Detail Screens ─────────────────────────────────────────
+        GoRoute(
+          path: '/doctor/appointment-detail',
+          builder: (_, state) {
+            final appt = state.extra as AppointmentModel;
+            return DoctorAppointmentDetailScreen(appointment: appt);
+          },
+        ),
+        GoRoute(
+          path: '/doctor/write-prescription',
+          builder: (_, state) {
+            final args = state.extra as Map<String, dynamic>? ?? {};
+            return WritePrescriptionScreen(
+              patientName: args['patientName'],
+              patientId: args['patientId'],
+              appointmentId: args['appointmentId'],
+            );
+          },
+        ),
+
+        // ── Admin ─────────────────────────────────────────────────────────
+        GoRoute(
+          path: '/admin',
+          builder: (_, __) => const AdminDashboardScreen(),
+        ),
       ],
     );
 

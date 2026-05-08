@@ -70,10 +70,10 @@ class _DoctorListingScreenState extends ConsumerState<DoctorListingScreen> {
                   return DoctorCard(
                     name: d.name,
                     specialty: d.specialty,
-                    hospital: d.city, // Using city for now
-                    rating: 4.8, // Mock rating for now
-                    reviewCount: 120, // Mock reviews
-                    availability: 'Available Today', // Mock availability
+                    hospital: d.hospital ?? d.city,
+                    rating: d.rating,
+                    reviewCount: d.reviewCount,
+                    availability: d.isAvailableOnline ? 'Online Available' : 'Clinic Only',
                     onTap: () => context.push('/doctor_profile', extra: d),
                   );
                 },

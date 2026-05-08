@@ -57,7 +57,7 @@ class _HomeScreenApiState extends ConsumerState<HomeScreenApi> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.notifications_outlined),
-                        onPressed: () {},
+                        onPressed: () => context.push('/notifications'),
                       ),
                     ],
                   ),
@@ -192,7 +192,9 @@ class _HomeScreenApiState extends ConsumerState<HomeScreenApi> {
               // Filter by selected category
               final filteredDoctors = _selectedCategory == 0
                   ? doctors
-                  : doctors.where((d) => d.specialty == _categories[_selectedCategory]).toList();
+                  : doctors.where((d) => d.specialty
+                      .toLowerCase()
+                      .contains(_categories[_selectedCategory].toLowerCase())).toList();
 
               if (filteredDoctors.isEmpty) {
                 return const SliverToBoxAdapter(

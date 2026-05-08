@@ -1,6 +1,8 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -67,10 +69,19 @@ class FCMService {
     _fcmToken = await _messaging.getToken();
     debugPrint('FCM Token: $_fcmToken');
 
-    // Listen for token refresh
-    _messaging.onTokenRefresh.listen((token) {
+    // Listen for token refresh — keep Firestore in sync
+    _messaging.onTokenRefresh.listen((token) async {
       _fcmToken = token;
       debugPrint('FCM Token refreshed: $token');
+      try {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .set({'fcmToken': token}, SetOptions(merge: true));
+        }
+      } catch (_) {}
     });
 
     // Handle foreground messages

@@ -4,6 +4,7 @@ import '../models/appointment_model.dart';
 import '../models/notification_model.dart';
 import 'auth_service.dart';
 import 'notification_service.dart';
+import 'fcm_service.dart';
 
 // ─── Legacy alias kept for backward compatibility with existing screens ───────
 typedef Appointment = AppointmentModel;
@@ -51,15 +52,21 @@ class BookingService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    // Send confirmation notification
+    // Save to Firestore notification + trigger FCM local notification
+    final title = 'Appointment Booked 📅';
+    final body =
+        'Your appointment with $doctorName on ${_formatDate(dateTime)} is confirmed. Awaiting doctor approval.';
+
     await _ref.read(notificationServiceProvider).sendNotification(
           userId: user.uid,
-          title: 'Appointment Booked',
-          body:
-              'Your appointment with $doctorName on ${_formatDate(dateTime)} is confirmed.',
+          title: title,
+          body: body,
           type: NotificationType.appointmentConfirmed,
           referenceId: ref.id,
         );
+
+    // FCM local push (for foreground/background device notification)
+    FCMService().showLocalNotification(title: title, body: body, payload: ref.id);
 
     return ref.id;
   }
@@ -143,13 +150,18 @@ class BookingService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
+    const title = 'Appointment Cancelled';
+    const body = 'Your appointment has been cancelled.';
+
     await _ref.read(notificationServiceProvider).sendNotification(
           userId: user.uid,
-          title: 'Appointment Cancelled',
-          body: 'Your appointment has been cancelled.',
+          title: title,
+          body: body,
           type: NotificationType.appointmentCancelled,
           referenceId: appointmentId,
         );
+
+    FCMService().showLocalNotification(title: title, body: body, payload: appointmentId);
   }
 
   /// Reschedule an appointment to a new date/time.
@@ -174,10 +186,26 @@ class BookingService {
 
   /// Mark appointment as completed (doctor/admin).
   Future<void> completeAppointment(String appointmentId) async {
+    final doc = await _db.collection('appointments').doc(appointmentId).get();
     await _db.collection('appointments').doc(appointmentId).update({
       'status': AppointmentStatus.completed.label,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    if (doc.exists) {
+      final data = doc.data() as Map<String, dynamic>;
+      const title = 'Appointment Completed ✅';
+      final body =
+          'Your appointment with ${data['doctorName']} has been marked as completed.';
+      await _ref.read(notificationServiceProvider).sendNotification(
+            userId: data['patientId'],
+            title: title,
+            body: body,
+            type: NotificationType.appointmentConfirmed,
+            referenceId: appointmentId,
+          );
+      FCMService().showLocalNotification(title: title, body: body, payload: appointmentId);
+    }
   }
 
   /// Approve appointment (doctor/admin).
@@ -192,14 +220,20 @@ class BookingService {
     });
 
     final data = doc.data() as Map<String, dynamic>;
+    final title = 'Appointment Approved ✅';
+    final body =
+        'Your appointment with ${data['doctorName']} has been approved!';
+
     await _ref.read(notificationServiceProvider).sendNotification(
           userId: data['patientId'],
-          title: 'Appointment Approved',
-          body:
-              'Your appointment with ${data['doctorName']} has been approved.',
+          title: title,
+          body: body,
           type: NotificationType.appointmentConfirmed,
           referenceId: appointmentId,
         );
+
+    // Also fire FCM local notification for the patient
+    FCMService().showLocalNotification(title: title, body: body, payload: appointmentId);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
