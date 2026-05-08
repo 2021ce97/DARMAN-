@@ -96,16 +96,19 @@ class DoctorService {
     }
   }
 
-  // ── Legacy Firestore Methods (for backward compatibility) ────────────────
+  // ── Firestore Methods ────────────────────────────────────────────────────
 
-  /// Stream of all verified doctors.
+  /// Stream of all verified doctors (case-insensitive status match).
   Stream<List<DoctorModel>> getVerifiedDoctors() {
     return _db
         .collection('doctors')
-        .where('status', isEqualTo: 'Verified')
-        .orderBy('rating', descending: true)
+        .where('status', whereIn: ['Verified', 'verified', 'active', 'Active'])
         .snapshots()
-        .map((s) => s.docs.map(DoctorModel.fromFirestore).toList());
+        .map((s) {
+          final docs = s.docs.map(DoctorModel.fromFirestore).toList();
+          docs.sort((a, b) => b.rating.compareTo(a.rating));
+          return docs;
+        });
   }
 
   /// Stream of all doctors (admin use).
@@ -119,29 +122,21 @@ class DoctorService {
 
   /// Stream of verified doctors filtered by specialty.
   Stream<List<DoctorModel>> getDoctorsBySpecialty(String specialty) {
-    return _db
-        .collection('doctors')
-        .where('status', isEqualTo: 'Verified')
-        .where('specialty', isEqualTo: specialty)
-        .orderBy('rating', descending: true)
-        .snapshots()
-        .map((s) => s.docs.map(DoctorModel.fromFirestore).toList());
+    return getVerifiedDoctors().map((doctors) => doctors
+        .where((d) => d.specialty.toLowerCase() == specialty.toLowerCase())
+        .toList());
   }
 
   /// One-time fetch of a single doctor by ID.
   Future<DoctorModel?> getDoctorById(String id) async {
-    // Try API first, fallback to Firestore
-    final apiDoctor = await getDoctorByIdFromApi(id);
-    if (apiDoctor != null) return apiDoctor;
-
     final doc = await _db.collection('doctors').doc(id).get();
     return doc.exists ? DoctorModel.fromFirestore(doc) : null;
   }
 
-  /// Search doctors by name or specialty (client-side filter on verified set).
+  /// Search doctors by name or specialty (client-side filter on all docs).
   Stream<List<DoctorModel>> searchDoctors(String query) {
     final q = query.toLowerCase().trim();
-    return getVerifiedDoctors().map((doctors) => doctors
+    return getAllDoctors().map((doctors) => doctors
         .where((d) =>
             d.name.toLowerCase().contains(q) ||
             d.specialty.toLowerCase().contains(q) ||
@@ -152,13 +147,7 @@ class DoctorService {
 
   /// Top-rated doctors (limit).
   Stream<List<DoctorModel>> getTopDoctors({int limit = 10}) {
-    return _db
-        .collection('doctors')
-        .where('status', isEqualTo: 'Verified')
-        .orderBy('rating', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((s) => s.docs.map(DoctorModel.fromFirestore).toList());
+    return getVerifiedDoctors().map((docs) => docs.take(limit).toList());
   }
 
   /// Doctors available online.

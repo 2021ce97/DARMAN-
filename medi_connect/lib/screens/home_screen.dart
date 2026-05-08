@@ -19,8 +19,8 @@ class _HomeScreenApiState extends ConsumerState<HomeScreenApi> {
 
   @override
   Widget build(BuildContext context) {
-    // Use API provider instead of Firestore
-    final doctorsAsyncValue = ref.watch(doctorsFromApiProvider);
+    // Use Firestore stream — live updates from doctors collection
+    final doctorsAsyncValue = ref.watch(verifiedDoctorsProvider);
     final authState = ref.watch(authStateProvider);
 
     return Scaffold(
@@ -140,6 +140,71 @@ class _HomeScreenApiState extends ConsumerState<HomeScreenApi> {
                     const Icon(Icons.medical_services, color: Colors.white, size: 80),
                   ],
                 ),
+              ),
+            ),
+          ),
+
+          // Quick Services Grid
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quick Services',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 14),
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.0,
+                    children: [
+                      _QuickServiceTile(
+                        icon: Icons.health_and_safety_rounded,
+                        label: 'Symptom\nChecker',
+                        color: const Color(0xFFE53935),
+                        onTap: () => context.push('/symptom_checker'),
+                      ),
+                      _QuickServiceTile(
+                        icon: Icons.smart_toy_rounded,
+                        label: 'AI Health\nAssistant',
+                        color: const Color(0xFF7C4DFF),
+                        onTap: () => context.push('/ai_chat'),
+                      ),
+                      _QuickServiceTile(
+                        icon: Icons.local_hospital_rounded,
+                        label: 'Find\nDoctors',
+                        color: AppColors.primary,
+                        onTap: () => context.push('/doctors'),
+                      ),
+                      _QuickServiceTile(
+                        icon: Icons.calendar_month_rounded,
+                        label: 'My\nAppointments',
+                        color: const Color(0xFFFF9800),
+                        onTap: () => context.push('/appointments'),
+                      ),
+                      _QuickServiceTile(
+                        icon: Icons.folder_shared_rounded,
+                        label: 'Health\nRecords',
+                        color: const Color(0xFF00BFA5),
+                        onTap: () => context.push('/health_records'),
+                      ),
+                      _QuickServiceTile(
+                        icon: Icons.receipt_long_rounded,
+                        label: 'My\nPrescriptions',
+                        color: const Color(0xFF5C6BC0),
+                        onTap: () => context.push('/prescriptions'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -267,7 +332,7 @@ class _HomeScreenApiState extends ConsumerState<HomeScreenApi> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () => ref.refresh(doctorsFromApiProvider),
+                        onPressed: () => ref.invalidate(verifiedDoctorsProvider),
                         child: const Text('Retry'),
                       ),
                     ],
@@ -277,6 +342,62 @@ class _HomeScreenApiState extends ConsumerState<HomeScreenApi> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickServiceTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickServiceTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(0.15)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

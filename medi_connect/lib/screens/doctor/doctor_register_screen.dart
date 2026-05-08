@@ -100,6 +100,7 @@ class _DoctorRegisterScreenState
 
       final doctorData = {
         'uid': uid,
+        'userId': uid, // Required by Firestore security rules
         'name': _nameCtrl.text.trim(),
         'fullName': _nameCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
@@ -108,6 +109,7 @@ class _DoctorRegisterScreenState
         'regNo': _regNoCtrl.text.trim(),
         'hospital': _hospitalCtrl.text.trim(),
         'city': _cityCtrl.text.trim(),
+        'province': _cityCtrl.text.trim(),
         'experienceYears': int.tryParse(_expCtrl.text) ?? 0,
         'role': 'doctor',
         'status': 'Pending', // Admin must verify
