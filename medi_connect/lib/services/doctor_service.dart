@@ -30,14 +30,14 @@ class DoctorService {
       queryParams['limit'] = limit.toString();
 
       final response = await _apiClient.get('/doctors', queryParams: queryParams);
-      
+
       if (response.success && response.data != null) {
-        final List<dynamic> doctorsJson = response.data is List 
-            ? response.data 
+        final List<dynamic> doctorsJson = response.data is List
+            ? response.data
             : [];
         return doctorsJson.map((json) => DoctorModel.fromJson(json)).toList();
       }
-      
+
       return [];
     } catch (e) {
       debugPrint('Error fetching doctors from API: $e');
@@ -49,11 +49,11 @@ class DoctorService {
   Future<DoctorModel?> getDoctorByIdFromApi(String id) async {
     try {
       final response = await _apiClient.get('/doctors/$id');
-      
+
       if (response.success && response.data != null) {
         return DoctorModel.fromJson(response.data);
       }
-      
+
       return null;
     } catch (e) {
       debugPrint('Error fetching doctor from API: $e');
@@ -68,11 +68,11 @@ class DoctorService {
         '/doctors/$doctorId/availability',
         queryParams: {'date': date},
       );
-      
+
       if (response.success && response.data != null) {
         return response.data;
       }
-      
+
       return null;
     } catch (e) {
       debugPrint('Error fetching availability from API: $e');
@@ -84,11 +84,11 @@ class DoctorService {
   Future<List<String>> getSpecialtiesFromApi() async {
     try {
       final response = await _apiClient.get('/doctors/meta/specialties');
-      
+
       if (response.success && response.data != null) {
         return List<String>.from(response.data);
       }
-      
+
       return [];
     } catch (e) {
       debugPrint('Error fetching specialties from API: $e');
@@ -98,17 +98,43 @@ class DoctorService {
 
   // ── Firestore Methods ────────────────────────────────────────────────────
 
-  /// Stream of all verified doctors (case-insensitive status match).
   Stream<List<DoctorModel>> getVerifiedDoctors() {
-    return _db
-        .collection('doctors')
-        .where('status', whereIn: ['Verified', 'verified', 'active', 'Active'])
-        .snapshots()
-        .map((s) {
-          final docs = s.docs.map(DoctorModel.fromFirestore).toList();
-          docs.sort((a, b) => b.rating.compareTo(a.rating));
-          return docs;
-        });
+    print('DEBUG: getVerifiedDoctors called');
+
+    // Use a multi-stream approach: first a one-time fetch (get) to ensure we have data,
+    // then merge with snapshots for real-time updates.
+    return _db.collection('doctors').snapshots().asyncMap((s) async {
+      print('DEBUG: Snapshots emitted ${s.docs.length} docs');
+
+      // If snapshots is empty, try a one-time direct fetch as fallback
+      var docs = s.docs;
+      if (docs.isEmpty) {
+        print('DEBUG: Snapshots empty, attempting direct get() fallback...');
+        try {
+          final snapshot = await _db.collection('doctors').get(const GetOptions(source: Source.server));
+          print('DEBUG: Direct get() returned ${snapshot.docs.length} docs');
+          docs = snapshot.docs;
+        } catch (e) {
+          print('DEBUG: Direct get() fallback failed: $e');
+        }
+      }
+
+      print('DEBUG: Total docs to parse: ${docs.length}');
+
+      final parsedDoctors = docs.map((doc) {
+        try {
+          return DoctorModel.fromFirestore(doc);
+        } catch (e) {
+          print('DEBUG: Error parsing doctor ${doc.id}: $e');
+          return null;
+        }
+      }).whereType<DoctorModel>().toList();
+
+      // Filter for "Verified" status in Dart
+      final verified = parsedDoctors.where((d) => d.status.toLowerCase() == 'verified').toList();
+      print('DEBUG: Successfully parsed and filtered ${verified.length} verified doctors');
+      return verified;
+    });
   }
 
   /// Stream of all doctors (admin use).
@@ -122,9 +148,21 @@ class DoctorService {
 
   /// Stream of verified doctors filtered by specialty.
   Stream<List<DoctorModel>> getDoctorsBySpecialty(String specialty) {
-    return getVerifiedDoctors().map((doctors) => doctors
-        .where((d) => d.specialty.toLowerCase() == specialty.toLowerCase())
-        .toList());
+    print('DEBUG: getDoctorsBySpecialty called for specialty: $specialty');
+    if (specialty.toLowerCase() == 'all') {
+      return getVerifiedDoctors();
+    }
+
+    return getVerifiedDoctors().map((doctors) {
+      final filtered = doctors.where((d) {
+        final dSpecialty = d.specialty.toLowerCase();
+        final searchSpecialty = specialty.toLowerCase();
+        // Check for substring match or reverse match (e.g. Cardiology in Cardiologist)
+        return dSpecialty.contains(searchSpecialty) || searchSpecialty.contains(dSpecialty);
+      }).toList();
+      print('DEBUG: Filtered ${filtered.length} doctors for specialty $specialty');
+      return filtered;
+    });
   }
 
   /// One-time fetch of a single doctor by ID.
@@ -167,7 +205,7 @@ class DoctorService {
   Future<Map<String, dynamic>> registerDoctorViaApi(Map<String, dynamic> doctorData) async {
     try {
       final response = await _apiClient.post('/doctors/profile', body: doctorData);
-      
+
       if (response.success) {
         return {
           'success': true,
@@ -175,7 +213,7 @@ class DoctorService {
           'message': response.message ?? 'Doctor registered successfully',
         };
       }
-      
+
       return {
         'success': false,
         'error': response.error ?? 'Failed to register doctor',
@@ -202,14 +240,14 @@ class DoctorService {
           'slots': slots,
         },
       );
-      
+
       if (response.success) {
         return {
           'success': true,
           'message': response.message ?? 'Availability updated successfully',
         };
       }
-      
+
       return {
         'success': false,
         'error': response.error ?? 'Failed to update availability',

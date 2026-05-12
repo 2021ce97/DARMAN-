@@ -2,6 +2,8 @@ import { getFirestore } from '../config/firebase.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import videoService from '../services/video_service.js';
 
+const APPOINTMENTS_COLLECTION = 'appointments';
+
 export default async function consultationRoutes(fastify, options) {
   const db = getFirestore();
 
@@ -36,7 +38,7 @@ export default async function consultationRoutes(fastify, options) {
       const { bookingId } = request.params;
       
       // Get booking details
-      const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+      const bookingDoc = await db.collection(APPOINTMENTS_COLLECTION).doc(bookingId).get();
 
       if (!bookingDoc.exists) {
         return reply.status(404).send({
@@ -78,7 +80,7 @@ export default async function consultationRoutes(fastify, options) {
       });
 
       // Update booking status
-      await db.collection('bookings').doc(bookingId).update({
+      await db.collection(APPOINTMENTS_COLLECTION).doc(bookingId).update({
         status: 'in-consultation',
         consultationStartedAt: new Date().toISOString(),
       });
@@ -123,7 +125,7 @@ export default async function consultationRoutes(fastify, options) {
       });
 
       // Update booking
-      await db.collection('bookings').doc(bookingId).update({
+      await db.collection(APPOINTMENTS_COLLECTION).doc(bookingId).update({
         status: 'completed',
         consultationEndedAt: new Date().toISOString(),
       });

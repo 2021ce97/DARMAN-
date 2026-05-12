@@ -1,5 +1,6 @@
 import { getFirestore, getAuth } from '../config/firebase.js';
 import { authenticate } from '../middleware/auth.middleware.js';
+import { writeAuditLog } from '../services/audit_service.js';
 
 export default async function authRoutes(fastify, options) {
   const db = getFirestore();
@@ -39,6 +40,16 @@ export default async function authRoutes(fastify, options) {
       };
 
       await db.collection('users').doc(userRecord.uid).set(userData);
+
+      await writeAuditLog({
+        actorId: userRecord.uid,
+        actorRole: role,
+        action: 'auth.register',
+        entityType: 'user',
+        entityId: userRecord.uid,
+        metadata: { email, role },
+        request,
+      });
 
       return reply.status(201).send({
         success: true,

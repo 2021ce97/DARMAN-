@@ -56,7 +56,11 @@ class HealthRecordsScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: PrimaryButton(label: 'Upload New Record', icon: Icons.upload_rounded, onPressed: () {}),
+              child: PrimaryButton(
+                label: 'Upload New Record',
+                icon: Icons.upload_rounded,
+                onPressed: () => _showUploadDialog(context, user?.uid),
+              ),
             ),
           ),
 
@@ -96,35 +100,63 @@ class HealthRecordsScreen extends ConsumerWidget {
                       (context, i) {
                         final data = snapshot.data!.docs[i].data() as Map<String, dynamic>;
                         final date = (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now();
-                        
+
+                        final isUserUpload = data['isUserUpload'] == true;
+
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppColors.surface, 
-                              borderRadius: BorderRadius.circular(16), 
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(16),
                               boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 3))]
                             ),
                             child: Row(children: [
                               Container(
-                                width: 48, height: 48, 
-                                decoration: BoxDecoration(color: const Color(0xFFFFEDE6), borderRadius: BorderRadius.circular(12)), 
-                                child: const Icon(Icons.description_rounded, color: AppColors.secondary, size: 26)
+                                width: 48, height: 48,
+                                decoration: BoxDecoration(
+                                  color: isUserUpload ? const Color(0xFFE0F2FE) : const Color(0xFFFFEDE6),
+                                  borderRadius: BorderRadius.circular(12)
+                                ),
+                                child: Icon(
+                                  isUserUpload ? Icons.file_present_rounded : Icons.description_rounded,
+                                  color: isUserUpload ? AppColors.primary : AppColors.secondary,
+                                  size: 26
+                                )
                               ),
                               const SizedBox(width: 14),
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Prescription: ${data['diagnosis'] ?? 'Checkup'}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                Text(
+                                  isUserUpload ? data['diagnosis'] : 'Prescription: ${data['diagnosis'] ?? 'Checkup'}',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)
+                                ),
                                 const SizedBox(height: 3),
-                                Text('Dr. ${data['doctorName']} • ${DateFormat('MMM dd, yyyy').format(date)}', style: const TextStyle(fontSize: 12, color: AppColors.textHint)),
+                                Text(
+                                  isUserUpload
+                                    ? '${data['category'] ?? 'General'} • ${DateFormat('MMM dd, yyyy').format(date)}'
+                                    : 'Dr. ${data['doctorName']} • ${DateFormat('MMM dd, yyyy').format(date)}',
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textHint)
+                                ),
                                 const SizedBox(height: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), 
-                                  decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(20)), 
-                                  child: const Text('Verified Prescription', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary))
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: isUserUpload ? AppColors.primary.withOpacity(0.1) : AppColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(20)
+                                  ),
+                                  child: Text(
+                                    isUserUpload ? 'Self Uploaded' : 'Verified Prescription',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: isUserUpload ? AppColors.primary : AppColors.textSecondary
+                                    )
+                                  )
                                 ),
                               ])),
-                              IconButton(icon: const Icon(Icons.visibility_rounded, color: AppColors.primary), onPressed: () => _showPrescriptionDetails(context, data)),
+                              if (!isUserUpload)
+                                IconButton(icon: const Icon(Icons.visibility_rounded, color: AppColors.primary), onPressed: () => _showPrescriptionDetails(context, data)),
                             ]),
                           ),
                         );
@@ -136,6 +168,84 @@ class HealthRecordsScreen extends ConsumerWidget {
               },
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
+      ),
+    );
+  }
+
+  void _showUploadDialog(BuildContext context, String? userId) {
+    if (userId == null) return;
+
+    final titleController = TextEditingController();
+    final typeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Upload Health Record'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'Record Title',
+                hintText: 'e.g., Blood Test Report',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: typeController,
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                hintText: 'e.g., Lab Report, X-Ray',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.outline.withOpacity(0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.file_present_rounded, color: AppColors.primary),
+                  SizedBox(width: 12),
+                  Text('Select File (PDF, Image)', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              if (titleController.text.isEmpty) return;
+
+              // In a real app, we would upload to Firebase Storage
+              // Here we just save the metadata to prescriptions collection as a "user record"
+              await FirebaseFirestore.instance.collection('prescriptions').add({
+                'patientId': userId,
+                'doctorName': 'Self Uploaded',
+                'diagnosis': titleController.text,
+                'category': typeController.text,
+                'createdAt': FieldValue.serverTimestamp(),
+                'medicines': [],
+                'isUserUpload': true,
+              });
+
+              if (context.mounted) Navigator.pop(context);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Record uploaded successfully!')),
+                );
+              }
+            },
+            child: const Text('Upload'),
+          ),
         ],
       ),
     );

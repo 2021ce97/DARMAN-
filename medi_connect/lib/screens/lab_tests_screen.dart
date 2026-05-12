@@ -155,11 +155,7 @@ class _LabTestCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Booking ${test.name}...')),
-                );
-              },
+              onPressed: () => _showBookingDialog(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -167,6 +163,44 @@ class _LabTestCard extends StatelessWidget {
               ),
               child: const Text('Book Test', style: TextStyle(color: Colors.white)),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBookingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Booking'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('You are booking: ${test.name}'),
+            const SizedBox(height: 8),
+            Text('Price: ${test.price.toInt()} AFN'),
+            const SizedBox(height: 16),
+            Text(
+              'A representative will contact you for ${test.homeCollection ? "home collection" : "clinic visit"} details.',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Test booked successfully! ID: LAB-${DateTime.now().millisecondsSinceEpoch % 10000}'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('Confirm'),
           ),
         ],
       ),
@@ -200,4 +234,3 @@ class _InfoChip extends StatelessWidget {
     );
   }
 }
-

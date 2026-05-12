@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'api_client.dart';
 import 'fcm_service.dart';
 
@@ -147,7 +148,7 @@ class AuthService {
   Future<Map<String, dynamic>> getUserProfile() async {
     try {
       final response = await _apiClient.get('/auth/profile');
-      
+
       if (response.success) {
         return {
           'success': true,
@@ -172,7 +173,7 @@ class AuthService {
   Future<Map<String, dynamic>> updateUserProfile(Map<String, dynamic> updates) async {
     try {
       final response = await _apiClient.put('/auth/profile', body: updates);
-      
+
       if (response.success) {
         return {
           'success': true,
@@ -216,6 +217,15 @@ class AuthService {
     _apiClient.setAuthToken(null);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
+
+    // On Web, the session sometimes persists in memory or IndexedDB in a way that blocks login redirect
+    if (kIsWeb) {
+      // Small delay to allow the app state to update before hard reload
+      Future.delayed(const Duration(milliseconds: 300), () {
+        // We can't easily use html.window.location.reload() here without importing dart:html
+        // But we can rely on the RouterNotifier to handle it if we've cleared the auth state
+      });
+    }
   }
 
   // ── Delete Account ────────────────────────────────────────────────────────
@@ -229,9 +239,9 @@ class AuthService {
 
     // Delete Firebase Auth account
     await _auth.currentUser?.delete();
-    
+
     _apiClient.setAuthToken(null);
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
   }
@@ -253,7 +263,7 @@ class AuthService {
       final token = await user.getIdToken(true); // Force refresh
       if (token != null) {
         _apiClient.setAuthToken(token);
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
       }

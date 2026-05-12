@@ -6,10 +6,13 @@
       "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log"]
     }
   ],
-  "firestore": {
-    "rules": "medi_connect/firestore.rules",
-    "indexes": "medi_connect/firestore.indexes.json"
-  },
+  "firestore": [
+    {
+      "database": "default",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
   "hosting": {
     "public": "medi_connect/build/web",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],

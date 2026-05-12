@@ -32,19 +32,31 @@ final userStateProvider = FutureProvider<UserState>((ref) async {
   if (user == null) return UserState.guest;
 
   try {
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    // First, check Custom Claims (fastest, most reliable)
+    final idTokenResult = await user.getIdTokenResult(true); // Force refresh to get latest claims
+    final claimRole = idTokenResult.claims?['role']?.toString().toLowerCase();
 
-    if (!doc.exists) return const UserState(role: UserRole.patient);
+    // Fallback to Firestore if claim isn't there
+    String roleString = claimRole ?? 'patient';
+    bool isBanned = false;
 
-    final data = doc.data()!;
-    final rawRole = data['role'] as String? ?? 'patient';
-    final isBanned = data['isBanned'] == true;
+    if (claimRole == null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        roleString = data['role']?.toString().toLowerCase() ?? 'patient';
+        isBanned = data['isBanned'] == true;
+      }
+    }
+
+    print('✅ ROLE PROVIDER: Found role "$roleString" for UID ${user.uid} (from claim: ${claimRole != null})');
 
     UserRole role;
-    switch (rawRole.toLowerCase()) {
+    switch (roleString) {
       case 'doctor':
         role = UserRole.doctor;
         break;
@@ -56,7 +68,9 @@ final userStateProvider = FutureProvider<UserState>((ref) async {
     }
 
     return UserState(role: role, isBanned: isBanned);
-  } catch (_) {
+  } catch (e, stack) {
+    print('❌ ROLE PROVIDER ERROR: $e');
+    print(stack);
     return const UserState(role: UserRole.patient);
   }
 });

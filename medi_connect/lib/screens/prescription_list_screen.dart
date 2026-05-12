@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' show DateFormat;
 import '../models/prescription_model.dart';
 import '../theme/app_colors.dart';
 import '../widgets/prescription_card.dart';

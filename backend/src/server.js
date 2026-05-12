@@ -40,7 +40,6 @@ await fastify.register(cors, {
     ? [
         'https://mediconnect-4b155.web.app',
         'https://mediconnect-4b155.firebaseapp.com',
-        'https://darman-admin.vercel.app',
         /\.onrender\.com$/,   // allow Render preview URLs
         /\.vercel\.app$/,     // allow Vercel preview URLs
       ]

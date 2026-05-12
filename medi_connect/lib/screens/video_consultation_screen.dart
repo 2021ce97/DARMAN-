@@ -75,12 +75,12 @@ class _VideoConsultationScreenState extends State<VideoConsultationScreen>
   Future<void> _initializeCall() async {
     try {
       // Generate token and start session
-      final token = await _videoService.generateToken(
+      await _videoService.generateToken(
         consultationId: widget.consultationId,
         userId: widget.userId,
         role: widget.role,
       );
-      final session = await _videoService.startConsultation(
+      await _videoService.startConsultation(
         widget.consultationId,
       );
 

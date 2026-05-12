@@ -6,7 +6,9 @@ import '../widgets/doctor_card.dart';
 import '../services/doctor_service.dart';
 
 class DoctorListingScreen extends ConsumerStatefulWidget {
-  const DoctorListingScreen({super.key});
+  final String? specialty;
+  const DoctorListingScreen({super.key, this.specialty});
+
   @override
   ConsumerState<DoctorListingScreen> createState() => _DoctorListingScreenState();
 }
@@ -22,13 +24,31 @@ class _DoctorListingScreenState extends ConsumerState<DoctorListingScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Top Doctors'),
+        title: Text(widget.specialty != null ? 'Top ${widget.specialty}s' : 'Top Doctors'),
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(icon: const Icon(Icons.arrow_back_rounded), onPressed: () => context.pop()),
         actions: [IconButton(icon: const Icon(Icons.tune_rounded), onPressed: () {})],
       ),
       body: Column(children: [
+        // Filter info if specialty is present
+        if (widget.specialty != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: AppColors.primary.withOpacity(0.05),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 14, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Showing results for "${widget.specialty}"',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                ),
+              ],
+            ),
+          ),
+
         // Sort Bar
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -55,10 +75,26 @@ class _DoctorListingScreenState extends ConsumerState<DoctorListingScreen> {
         const Divider(height: 1, color: AppColors.divider),
         Expanded(
           child: doctorsAsyncValue.when(
-            data: (doctors) {
+            data: (allDoctors) {
+              final doctors = widget.specialty != null
+                  ? allDoctors.where((d) => d.specialty.toLowerCase().contains(widget.specialty!.toLowerCase())).toList()
+                  : allDoctors;
+
               if (doctors.isEmpty) {
-                return const Center(
-                  child: Text('No verified doctors found.'),
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off_rounded, size: 64, color: AppColors.textHint.withOpacity(0.3)),
+                      const SizedBox(height: 16),
+                      Text(
+                        widget.specialty != null
+                            ? 'No ${widget.specialty}s available yet'
+                            : 'No verified doctors found.',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ],
+                  ),
                 );
               }
               return ListView.separated(

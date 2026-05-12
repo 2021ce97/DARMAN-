@@ -64,7 +64,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 4, vsync: this);
+    _tabs = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -108,6 +108,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             Tab(text: 'Doctors'),
             Tab(text: 'Appointments'),
             Tab(text: 'Users'),
+            Tab(text: 'Health Records'),
           ],
         ),
       ),
@@ -118,6 +119,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           const _DoctorsManagementTab(),
           const _AppointmentsTab(),
           const AdminUsersTab(),
+          const _AdminHealthRecordsTab(),
         ],
       ),
     );
@@ -341,16 +343,6 @@ class _DoctorsManagementTab extends ConsumerWidget {
                 // All doctors
                 Consumer(
                   builder: (context, ref, _) {
-                    final allAsync = StreamProvider<List<Map<String, dynamic>>>((ref) {
-                      return FirebaseFirestore.instance
-                          .collection('doctors')
-                          .orderBy('createdAt', descending: true)
-                          .snapshots()
-                          .map((snap) => snap.docs
-                              .map((d) => {'id': d.id, ...d.data()})
-                              .toList());
-                    });
-                    // Use a separate inner consumer
                     return _AllDoctorsList();
                   },
                 ),
@@ -688,6 +680,76 @@ class _AppointmentsTab extends ConsumerWidget {
                       ),
                     ],
                   ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+// ─── Admin Health Records Tab ──────────────────────────────────────────────────
+class _AdminHealthRecordsTab extends ConsumerWidget {
+  const _AdminHealthRecordsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('prescriptions')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text('No health records found'));
+        }
+
+        final records = snapshot.data!.docs;
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: records.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (context, i) {
+            final data = records[i].data() as Map<String, dynamic>;
+            final date = (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+            final isUserUpload = data['isUserUpload'] == true;
+
+            return Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isUserUpload ? Icons.file_present_rounded : Icons.description_rounded,
+                    color: isUserUpload ? AppColors.primary : AppColors.secondary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isUserUpload ? data['diagnosis'] : 'Rx: ${data['diagnosis']}',
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
+                        Text(
+                          isUserUpload
+                              ? 'Uploaded by Patient • ${DateFormat('MMM d').format(date)}'
+                              : 'By Dr. ${data['doctorName']} • ${DateFormat('MMM d').format(date)}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textHint),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _StatusPill(isUserUpload ? 'User Record' : 'Prescription'),
                 ],
               ),
             );

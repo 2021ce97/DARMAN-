@@ -24,13 +24,13 @@ class PaymentService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/payment/create'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.payments}/create-intent'),
         headers: await _getHeaders(),
         body: jsonEncode({
           'bookingId': bookingId,
           'amount': amount,
           'currency': currency,
-          'paymentMethod': paymentMethod,
+          'method': paymentMethod,
         }),
       );
 
@@ -52,10 +52,10 @@ class PaymentService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/payment/confirm'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.payments}/$orderId/confirm'),
         headers: await _getHeaders(),
         body: jsonEncode({
-          'orderId': orderId,
+          'paymentMethod': 'hesabpay',
           'transactionId': transactionId,
         }),
       );
@@ -75,7 +75,7 @@ class PaymentService {
   Future<Payment> getPaymentStatus(String paymentId) async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/payment/$paymentId/status'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.payments}/$paymentId/status'),
         headers: await _getHeaders(),
       );
 
@@ -94,7 +94,7 @@ class PaymentService {
   Future<List<Payment>> getPaymentHistory() async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/payment/history'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.payments}/history'),
         headers: await _getHeaders(),
       );
 
@@ -117,7 +117,7 @@ class PaymentService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/payment/$paymentId/refund'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.payments}/$paymentId/refund'),
         headers: await _getHeaders(),
         body: jsonEncode({
           'reason': reason,

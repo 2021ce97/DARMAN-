@@ -1,18 +1,18 @@
 services:
   - type: web
     name: darman-api
-    env: node
+    runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: node src/server.js
     healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
+      - key: HOST
+        value: 0.0.0.0
       - key: FIREBASE_PROJECT_ID
         value: mediconnect-4b155
       - key: FIREBASE_CLIENT_EMAIL
@@ -20,7 +20,7 @@ services:
       - key: FIREBASE_PRIVATE_KEY
         sync: false
       - key: JWT_SECRET
-        value: darman-mediconnect-2026-secret-key
+        generateValue: true
       - key: RATE_LIMIT_MAX
         value: 100
       - key: RATE_LIMIT_TIMEWINDOW

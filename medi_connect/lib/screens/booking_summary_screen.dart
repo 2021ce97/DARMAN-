@@ -1,13 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../models/appointment_model.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 
 class BookingSummaryScreen extends StatelessWidget {
-  const BookingSummaryScreen({super.key});
+  final AppointmentModel? appointment;
+
+  const BookingSummaryScreen({super.key, this.appointment});
 
   @override
   Widget build(BuildContext context) {
+    // If no appointment is passed, show a fallback or use the latest one from provider
+    // For now, we'll assume it's passed or use mock if null (to avoid breaking)
+    final appt = appointment ?? AppointmentModel(
+      id: 'mock',
+      doctorId: 'd1',
+      doctorName: 'Dr. James Wilson',
+      doctorSpecialty: 'Cardiologist',
+      patientId: 'p1',
+      patientName: 'John Doe',
+      dateTime: DateTime.now().add(const Duration(days: 1)),
+      status: AppointmentStatus.pending,
+      type: AppointmentType.clinicVisit,
+      amount: 55.0,
+      createdAt: DateTime.now(),
+    );
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -27,9 +46,9 @@ class BookingSummaryScreen extends StatelessWidget {
               Container(width: 60, height: 60, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 36)),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Dr. James Wilson', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                Text(appt.doctorName, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 2),
-                Text('Cardiologist • City Hospital', style: Theme.of(context).textTheme.bodyMedium),
+                Text('${appt.doctorSpecialty} • Clinic', style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 6),
                 Row(children: const [Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 14), SizedBox(width: 4), Text('4.9  (128 reviews)', style: TextStyle(fontSize: 12, color: AppColors.textHint))]),
               ])),
@@ -39,11 +58,11 @@ class BookingSummaryScreen extends StatelessWidget {
 
           // Appointment Details
           _Card(child: Column(children: [
-            _Row(icon: Icons.calendar_today_rounded, label: 'Date', value: 'Monday, Oct 28, 2026'),
+            _Row(icon: Icons.calendar_today_rounded, label: 'Date', value: _formatDate(appt.dateTime)),
             const Divider(height: 20, color: AppColors.divider),
-            _Row(icon: Icons.access_time_rounded, label: 'Time', value: '09:00 AM – 09:30 AM'),
+            _Row(icon: Icons.access_time_rounded, label: 'Time', value: _formatTime(appt.dateTime)),
             const Divider(height: 20, color: AppColors.divider),
-            _Row(icon: Icons.location_on_rounded, label: 'Location', value: 'City Hospital, Cardiology Wing'),
+            _Row(icon: Icons.location_on_rounded, label: 'Type', value: appt.type == AppointmentType.online ? 'Online Consultation' : 'Clinic Visit'),
           ])),
           const SizedBox(height: 16),
 
@@ -51,11 +70,9 @@ class BookingSummaryScreen extends StatelessWidget {
           Text('Patient Details', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 10),
           _Card(child: Column(children: [
-            _DetailRow(label: 'Full Name', value: 'John Doe'),
+            _DetailRow(label: 'Full Name', value: appt.patientName),
             const Divider(height: 16, color: AppColors.divider),
-            _DetailRow(label: 'Age', value: '32 Years'),
-            const Divider(height: 16, color: AppColors.divider),
-            _DetailRow(label: 'Reason', value: 'Chest pain & checkup'),
+            _DetailRow(label: 'Reason', value: appt.notes ?? 'General Checkup'),
           ])),
           const SizedBox(height: 16),
 
@@ -63,15 +80,13 @@ class BookingSummaryScreen extends StatelessWidget {
           Text('Payment Summary', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 10),
           _Card(child: Column(children: [
-            _DetailRow(label: 'Consultation Fee', value: '\$50.00'),
+            _DetailRow(label: 'Consultation Fee', value: '${appt.amount.toStringAsFixed(2)} AFN'),
             const SizedBox(height: 8),
-            _DetailRow(label: 'Platform Fee', value: '\$2.00'),
-            const SizedBox(height: 8),
-            _DetailRow(label: 'Tax (6%)', value: '\$3.00'),
+            const _DetailRow(label: 'Platform Fee', value: '50.00 AFN'),
             const Divider(height: 20, color: AppColors.divider),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text('Total', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-              Text('\$55.00', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary)),
+              Text('${(appt.amount + 50).toStringAsFixed(2)} AFN', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary)),
             ]),
           ])),
           const SizedBox(height: 16),
@@ -92,12 +107,22 @@ class BookingSummaryScreen extends StatelessWidget {
       bottomNavigationBar: Container(
         padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
         decoration: const BoxDecoration(color: AppColors.surface, boxShadow: [BoxShadow(color: Color(0x1A000000), blurRadius: 16, offset: Offset(0, -4))]),
-        child: PrimaryButton(label: 'Confirm & Pay  \$55.00', onPressed: () => _showConfirmDialog(context)),
+        child: PrimaryButton(label: 'Confirm & Pay  ${(appt.amount + 50).toStringAsFixed(2)} AFN', onPressed: () => _showConfirmDialog(context, appt)),
       ),
     );
   }
 
-  void _showConfirmDialog(BuildContext context) {
+  String _formatDate(DateTime dt) {
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  String _formatTime(DateTime dt) {
+    final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    return '${hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} $ampm';
+  }
+
+  void _showConfirmDialog(BuildContext context, AppointmentModel appt) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -108,7 +133,7 @@ class BookingSummaryScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Text('Booking Confirmed!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          const Text('Your appointment with Dr. James Wilson has been booked successfully.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary, height: 1.5)),
+          Text('Your appointment with ${appt.doctorName} has been booked successfully.', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, height: 1.5)),
           const SizedBox(height: 24),
           SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () { context.go('/'); }, child: const Text('Go to Home'))),
           const SizedBox(height: 10),

@@ -11,6 +11,7 @@ let mockMode = false;
 export const mockStore = {
   users: new Map(),
   doctors: new Map(),
+  appointments: new Map(),
   hospitals: new Map(),
   labs: new Map(),
   pharmacies: new Map(),
@@ -240,6 +241,13 @@ const seedMockData = () => {
 
 export const initializeFirebase = () => {
   if (firebaseApp) return firebaseApp;
+
+  if (process.env.FIREBASE_MOCK_MODE === 'true') {
+    mockMode = true;
+    console.warn('⚠️  Running in MOCK MODE — FIREBASE_MOCK_MODE=true.');
+    seedMockData();
+    return null;
+  }
 
   if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
     try {

@@ -67,6 +67,14 @@ class AppConfig {
     defaultValue: 'REPLACE_WITH_FCM_SERVER_KEY',
   );
 
+  // ─── Firebase App Check ───────────────────────────────────────────────────
+  /// Web requires a reCAPTCHA v3 site key from Firebase App Check.
+  /// Mobile providers can be activated without this value.
+  static const String appCheckRecaptchaSiteKey = String.fromEnvironment(
+    'APP_CHECK_RECAPTCHA_SITE_KEY',
+    defaultValue: '',
+  );
+
   // ─── App Info ──────────────────────────────────────────────────────────────
   static const String appName = 'DARMAN';
   static const String appVersion = '1.0.0';
@@ -82,4 +90,5 @@ class AppConfig {
       agoraAppId.isNotEmpty && !agoraAppId.startsWith('REPLACE_');
   static bool get isHesabPayConfigured =>
       hesabPayMerchantId.isNotEmpty && !hesabPayMerchantId.startsWith('REPLACE_');
+  static bool get isAppCheckWebConfigured => appCheckRecaptchaSiteKey.isNotEmpty;
 }

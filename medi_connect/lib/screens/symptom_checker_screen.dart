@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 
@@ -74,7 +75,7 @@ class _SymptomCheckerScreenState extends State<SymptomCheckerScreen> {
             const SizedBox(height: 8),
             const Text('Select all that apply to receive a recommendation.', style: TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 20),
-            
+
             ..._symptomsMap.entries.map((entry) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -135,7 +136,18 @@ class _SymptomCheckerScreenState extends State<SymptomCheckerScreen> {
                     const SizedBox(height: 16),
                     PrimaryButton(
                       label: 'Find Recommended Doctors',
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        // Extract specialty from result
+                        String specialty = '';
+                        if (_result!.contains('Cardiologist')) specialty = 'Cardiologist';
+                        else if (_result!.contains('General Physician')) specialty = 'General Physician';
+                        else if (_result!.contains('Gastroenterologist')) specialty = 'Gastroenterologist';
+                        else if (_result!.contains('Dermatologist')) specialty = 'Dermatologist';
+                        else if (_result!.contains('Pulmonologist')) specialty = 'Pulmonologist';
+
+                        // Navigate to doctor listing with specialty filter
+                        context.push('/doctors', extra: {'specialty': specialty});
+                      },
                     ),
                   ],
                 ),

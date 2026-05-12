@@ -31,13 +31,13 @@ class Payment {
     return Payment(
       id: json['id'] ?? '',
       bookingId: json['bookingId'] ?? '',
-      userId: json['userId'] ?? '',
+      userId: json['userId'] ?? json['patientId'] ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
       currency: json['currency'] ?? 'AFN',
       status: json['status'] ?? 'pending',
-      paymentMethod: json['paymentMethod'] ?? 'hesabpay',
+      paymentMethod: json['paymentMethod'] ?? json['method'] ?? 'hesabpay',
       transactionId: json['transactionId'],
-      hesabpayOrderId: json['hesabpayOrderId'],
+      hesabpayOrderId: json['hesabpayOrderId'] ?? json['paymentId'],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -88,7 +88,7 @@ class PaymentIntent {
 
   factory PaymentIntent.fromJson(Map<String, dynamic> json) {
     return PaymentIntent(
-      orderId: json['orderId'] ?? '',
+      orderId: json['orderId'] ?? json['id'] ?? json['paymentId'] ?? '',
       paymentUrl: json['paymentUrl'] ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
       currency: json['currency'] ?? 'AFN',

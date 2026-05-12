@@ -5,10 +5,12 @@
 import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
+import { getFirestore } from '../config/firebase.js';
 dotenv.config();
 
 const sa = JSON.parse(readFileSync('./serviceAccountKey.json', 'utf8'));
 admin.initializeApp({ credential: admin.credential.cert(sa) });
+const db = getFirestore();
 
 async function createTestUser() {
   console.log('👤 Creating test users...\n');
@@ -36,27 +38,76 @@ async function createTestUser() {
 
   for (const user of users) {
     try {
-      // Check if user already exists
+      let userRecord;
       try {
-        const existing = await admin.auth().getUserByEmail(user.email);
-        console.log(`ℹ️  User already exists: ${user.email} (uid: ${existing.uid})`);
-        continue;
+        userRecord = await admin.auth().getUserByEmail(user.email);
+        await admin.auth().updateUser(userRecord.uid, {
+          password: user.password,
+          displayName: user.displayName,
+          emailVerified: true,
+          disabled: false,
+        });
+        console.log(`ℹ️  Updated existing user: ${user.email} (uid: ${userRecord.uid})`);
       } catch (_) {
-        // User doesn't exist, create it
+        userRecord = await admin.auth().createUser({
+          email: user.email,
+          password: user.password,
+          displayName: user.displayName,
+          emailVerified: true,
+        });
+        console.log(`✅ Created: ${user.email}`);
       }
 
-      const created = await admin.auth().createUser({
+      await admin.auth().setCustomUserClaims(userRecord.uid, { role: user.role });
+
+      await db.collection('users').doc(userRecord.uid).set({
+        uid: userRecord.uid,
         email: user.email,
-        password: user.password,
-        displayName: user.displayName,
-        emailVerified: true,
-      });
+        fullName: user.displayName,
+        name: user.displayName,
+        role: user.role,
+        status: user.role === 'doctor' ? 'verified' : 'active',
+        isBanned: false,
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      }, { merge: true });
 
-      // Set custom claims for role
-      await admin.auth().setCustomUserClaims(created.uid, { role: user.role });
+      if (user.role === 'doctor') {
+        await db.collection('doctors').doc(userRecord.uid).set({
+          userId: userRecord.uid,
+          fullName: user.displayName,
+          name: user.displayName,
+          email: user.email,
+          specialty: 'General Physician',
+          province: 'Kabul',
+          city: 'Kabul City',
+          hospital: 'DARMAN Demo Clinic',
+          experience: 8,
+          fee: 500,
+          rating: 4.8,
+          reviewCount: 12,
+          status: 'verified',
+          languages: ['Dari', 'Pashto', 'English'],
+          isAvailableOnline: true,
+          verifiedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
+      }
 
-      console.log(`✅ Created: ${user.email}`);
-      console.log(`   UID: ${created.uid}`);
+      if (user.role === 'admin') {
+        await db.collection('audit_logs').add({
+          actorId: userRecord.uid,
+          actorRole: 'admin',
+          action: 'demo_account.bootstrap',
+          entityType: 'user',
+          entityId: userRecord.uid,
+          metadata: { email: user.email, role: user.role },
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      console.log(`   UID: ${userRecord.uid}`);
       console.log(`   Role: ${user.role}`);
       console.log(`   Password: ${user.password}\n`);
     } catch (e) {

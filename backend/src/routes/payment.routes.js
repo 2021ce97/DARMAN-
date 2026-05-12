@@ -1,6 +1,9 @@
 import { getFirestore } from '../config/firebase.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import paymentService from '../services/payment_service.js';
+import { writeAuditLog } from '../services/audit_service.js';
+
+const APPOINTMENTS_COLLECTION = 'appointments';
 
 export default async function paymentRoutes(fastify, options) {
   const db = getFirestore();
@@ -42,6 +45,16 @@ export default async function paymentRoutes(fastify, options) {
       };
 
       const paymentRef = await db.collection('payments').add(paymentData);
+
+      await writeAuditLog({
+        actorId: request.user.uid,
+        actorRole: request.user.role || 'patient',
+        action: 'payment.intent_create',
+        entityType: 'payment',
+        entityId: paymentRef.id,
+        metadata: { bookingId, amount, method, mockMode: paymentResult.mockMode || false },
+        request,
+      });
 
       return reply.status(201).send({
         success: true,
@@ -97,11 +110,25 @@ export default async function paymentRoutes(fastify, options) {
         completedAt: new Date().toISOString(),
       });
 
+      await writeAuditLog({
+        actorId: request.user.uid,
+        actorRole: request.user.role || 'patient',
+        action: 'payment.confirm',
+        entityType: 'payment',
+        entityId: id,
+        metadata: {
+          bookingId: paymentData.bookingId,
+          transactionId: confirmResult.transactionId,
+          mockMode: confirmResult.mockMode || false,
+        },
+        request,
+      });
+
       // Update booking payment status
       if (paymentData.bookingId) {
-        await db.collection('bookings').doc(paymentData.bookingId).update({
+        await db.collection(APPOINTMENTS_COLLECTION).doc(paymentData.bookingId).update({
           paymentStatus: 'completed',
-          status: 'confirmed',
+          updatedAt: new Date().toISOString(),
         });
       }
 
@@ -190,6 +217,20 @@ export default async function paymentRoutes(fastify, options) {
         refundId: refundResult.refundId,
         refundedAt: new Date().toISOString(),
         refundAmount: refundResult.amount,
+      });
+
+      await writeAuditLog({
+        actorId: request.user.uid,
+        actorRole: request.user.role || 'patient',
+        action: 'payment.refund',
+        entityType: 'payment',
+        entityId: id,
+        metadata: {
+          refundId: refundResult.refundId,
+          amount: refundResult.amount,
+          mockMode: refundResult.mockMode || false,
+        },
+        request,
       });
 
       return reply.send({
