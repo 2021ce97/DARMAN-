@@ -242,7 +242,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: appts.take(5).length,
-                    separatorBuilder: (_, __) => const Divider(
+                    separatorBuilder: (_, _) => const Divider(
                         height: 1, color: AppColors.divider),
                     itemBuilder: (context, i) {
                       final appt = appts[i];
@@ -333,7 +333,7 @@ class _DoctorsManagementTab extends ConsumerWidget {
                     return ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: doctors.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const SizedBox(height: 12),
                       itemBuilder: (context, i) =>
                           _DoctorVerificationCard(doctor: doctors[i]),
@@ -374,7 +374,7 @@ class _AllDoctorsList extends ConsumerWidget {
       data: (doctors) => ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: doctors.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) {
           final d = doctors[i];
           final status = d['status'] as String? ?? 'Unknown';
@@ -632,7 +632,7 @@ class _AppointmentsTab extends ConsumerWidget {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: appts.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
           itemBuilder: (context, i) {
             final a = appts[i];
             final ts = a['dateTime'] as Timestamp?;
@@ -713,7 +713,7 @@ class _AdminHealthRecordsTab extends ConsumerWidget {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: records.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
           itemBuilder: (context, i) {
             final data = records[i].data() as Map<String, dynamic>;
             final date = (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now();

@@ -1,8 +1,5 @@
 import { getFirestore } from '../config/firebase.js';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
-import { writeAuditLog } from '../services/audit_service.js';
-
-const APPOINTMENTS_COLLECTION = 'appointments';
 
 export default async function bookingRoutes(fastify, options) {
   const db = getFirestore();
@@ -54,17 +51,7 @@ export default async function bookingRoutes(fastify, options) {
         updatedAt: new Date().toISOString(),
       };
 
-      const bookingRef = await db.collection(APPOINTMENTS_COLLECTION).add(bookingData);
-
-      await writeAuditLog({
-        actorId: request.user.uid,
-        actorRole: request.user.role || 'patient',
-        action: 'appointment.create',
-        entityType: 'appointment',
-        entityId: bookingRef.id,
-        metadata: { doctorId, date, timeSlot, type },
-        request,
-      });
+      const bookingRef = await db.collection('bookings').add(bookingData);
 
       // Mark slot as unavailable
       const updatedSlots = slots.map(s => 
@@ -95,7 +82,7 @@ export default async function bookingRoutes(fastify, options) {
     try {
       const { status, page = 1, limit = 20 } = request.query;
       
-      let query = db.collection(APPOINTMENTS_COLLECTION).where('patientId', '==', request.user.uid);
+      let query = db.collection('bookings').where('patientId', '==', request.user.uid);
 
       if (status) {
         query = query.where('status', '==', status);
@@ -141,7 +128,7 @@ export default async function bookingRoutes(fastify, options) {
   fastify.get('/:id', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { id } = request.params;
-      const bookingDoc = await db.collection(APPOINTMENTS_COLLECTION).doc(id).get();
+      const bookingDoc = await db.collection('bookings').doc(id).get();
 
       if (!bookingDoc.exists) {
         return reply.status(404).send({
@@ -174,7 +161,7 @@ export default async function bookingRoutes(fastify, options) {
   fastify.put('/:id/cancel', { preHandler: authenticate }, async (request, reply) => {
     try {
       const { id } = request.params;
-      const bookingDoc = await db.collection(APPOINTMENTS_COLLECTION).doc(id).get();
+      const bookingDoc = await db.collection('bookings').doc(id).get();
 
       if (!bookingDoc.exists) {
         return reply.status(404).send({
@@ -192,19 +179,9 @@ export default async function bookingRoutes(fastify, options) {
       }
 
       // Update booking status
-      await db.collection(APPOINTMENTS_COLLECTION).doc(id).update({
+      await db.collection('bookings').doc(id).update({
         status: 'cancelled',
         updatedAt: new Date().toISOString(),
-      });
-
-      await writeAuditLog({
-        actorId: request.user.uid,
-        actorRole: request.user.role || 'patient',
-        action: 'appointment.cancel',
-        entityType: 'appointment',
-        entityId: id,
-        metadata: { doctorId: bookingData.doctorId },
-        request,
       });
 
       // Make slot available again
@@ -244,7 +221,7 @@ export default async function bookingRoutes(fastify, options) {
     try {
       const { status, page = 1, limit = 20 } = request.query;
 
-      let query = db.collection(APPOINTMENTS_COLLECTION).where('doctorId', '==', request.user.uid);
+      let query = db.collection('bookings').where('doctorId', '==', request.user.uid);
 
       if (status) {
         query = query.where('status', '==', status);
@@ -295,19 +272,12 @@ export default async function bookingRoutes(fastify, options) {
         return reply.status(400).send({ error: { message: 'Status is required', statusCode: 400 } });
       }
 
-      const statusMap = {
-        accepted: 'approved',
-        approved: 'approved',
-        rejected: 'cancelled',
-        cancelled: 'cancelled',
-        completed: 'completed',
-      };
-      const normalizedStatus = statusMap[status];
-      if (!normalizedStatus) {
+      const allowed = ['accepted', 'rejected', 'completed'];
+      if (!allowed.includes(status)) {
         return reply.status(400).send({ error: { message: 'Invalid status', statusCode: 400 } });
       }
 
-      const bookingDoc = await db.collection(APPOINTMENTS_COLLECTION).doc(id).get();
+      const bookingDoc = await db.collection('bookings').doc(id).get();
       if (!bookingDoc.exists) {
         return reply.status(404).send({ error: { message: 'Booking not found', statusCode: 404 } });
       }
@@ -318,23 +288,10 @@ export default async function bookingRoutes(fastify, options) {
         return reply.status(403).send({ error: { message: 'Forbidden', statusCode: 403 } });
       }
 
-      await db.collection(APPOINTMENTS_COLLECTION).doc(id).update({
-        status: normalizedStatus,
-        updatedAt: new Date().toISOString(),
-      });
-
-      await writeAuditLog({
-        actorId: request.user.uid,
-        actorRole: request.user.role || 'doctor',
-        action: 'appointment.status_update',
-        entityType: 'appointment',
-        entityId: id,
-        metadata: { fromStatus: bookingData.status, toStatus: normalizedStatus },
-        request,
-      });
+      await db.collection('bookings').doc(id).update({ status, updatedAt: new Date().toISOString() });
 
       // If doctor rejected, make slot available again
-      if (normalizedStatus === 'cancelled') {
+      if (status === 'rejected') {
         const availabilityDoc = await db.collection('doctors')
           .doc(bookingData.doctorId)
           .collection('availability')

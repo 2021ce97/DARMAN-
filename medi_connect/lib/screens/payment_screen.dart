@@ -9,11 +9,11 @@ class PaymentScreen extends StatefulWidget {
   final String doctorName;
 
   const PaymentScreen({
-    Key? key,
+    super.key,
     required this.bookingId,
     required this.amount,
     required this.doctorName,
-  }) : super(key: key);
+  });
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -301,7 +301,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   },
                 ),
               );
-            }).toList(),
+            }),
 
             SizedBox(height: 24),
 

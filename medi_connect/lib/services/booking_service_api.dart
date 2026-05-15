@@ -18,7 +18,7 @@ class BookingServiceApi {
         'date': date,
         'timeSlot': timeSlot,
         'type': type,
-        if (notes != null) 'notes': notes,
+        'notes': ?notes,
       });
 
       if (response.success) {

@@ -179,7 +179,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: _days.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
                     itemBuilder: (context, i) => GestureDetector(
                       onTap: () => setState(() => _selectedDay = i),
                       child: AnimatedContainer(

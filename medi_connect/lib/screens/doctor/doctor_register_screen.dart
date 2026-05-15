@@ -414,7 +414,7 @@ class _DoctorRegisterScreenState
                   ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: _specialtyCtrl.text.isEmpty
+                    initialValue: _specialtyCtrl.text.isEmpty
                         ? null
                         : _specialtyCtrl.text,
                     hint: const Text('Select specialty'),

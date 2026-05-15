@@ -114,11 +114,11 @@ class RouterNotifier extends ChangeNotifier {
   RouterNotifier(this._ref) {
     _ref.listen<AsyncValue<User?>>(
       authStateProvider,
-      (_, __) => notifyListeners(),
+      (_, _) => notifyListeners(),
     );
     _ref.listen<AsyncValue<UserRole>>(
       userRoleProvider,
-      (_, __) => notifyListeners(),
+      (_, _) => notifyListeners(),
     );
   }
 
@@ -164,13 +164,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // ── Main tabs ──────────────────────────────────────────────────────
       GoRoute(path: '/', builder: (_, _) => const MainScaffold(initialIndex: 0)),
-      GoRoute(path: '/appointments', builder: (_, __) => const MainScaffold(initialIndex: 2)),
-      GoRoute(path: '/profile', builder: (_, __) => const MainScaffold(initialIndex: 3)),
-      GoRoute(path: '/search', builder: (_, __) => const MainScaffold(initialIndex: 1)),
+      GoRoute(path: '/appointments', builder: (_, _) => const MainScaffold(initialIndex: 2)),
+      GoRoute(path: '/profile', builder: (_, _) => const MainScaffold(initialIndex: 3)),
+      GoRoute(path: '/search', builder: (_, _) => const MainScaffold(initialIndex: 1)),
 
       // ── Auth ───────────────────────────────────────────────────────────
-      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (_, __) => const RegisterScreenApi()),
+      GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(path: '/register', builder: (_, _) => const RegisterScreenApi()),
 
       // ── Doctors ────────────────────────────────────────────────────────
       GoRoute(
@@ -203,25 +203,25 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Health Records ─────────────────────────────────────────────────
-      GoRoute(path: '/health_records', builder: (_, __) => const HealthRecordsScreen()),
-      GoRoute(path: '/health_dashboard', builder: (_, __) => const HealthDashboardScreen()),
-      GoRoute(path: '/add_health_metric', builder: (_, __) => const AddHealthMetricScreen()),
+      GoRoute(path: '/health_records', builder: (_, _) => const HealthRecordsScreen()),
+      GoRoute(path: '/health_dashboard', builder: (_, _) => const HealthDashboardScreen()),
+      GoRoute(path: '/add_health_metric', builder: (_, _) => const AddHealthMetricScreen()),
 
       // ── Prescriptions ──────────────────────────────────────────────────
-      GoRoute(path: '/prescriptions', builder: (_, __) => const PrescriptionListScreen()),
+      GoRoute(path: '/prescriptions', builder: (_, _) => const PrescriptionListScreen()),
 
       // ── Medications ────────────────────────────────────────────────────
-      GoRoute(path: '/medication_reminders', builder: (_, __) => const MedicationRemindersScreen()),
+      GoRoute(path: '/medication_reminders', builder: (_, _) => const MedicationRemindersScreen()),
 
       // ── Lab Tests ──────────────────────────────────────────────────────
-      GoRoute(path: '/lab_tests', builder: (_, __) => const LabTestsScreen()),
+      GoRoute(path: '/lab_tests', builder: (_, _) => const LabTestsScreen()),
 
       // ── Pharmacy ───────────────────────────────────────────────────────
-      GoRoute(path: '/pharmacy', builder: (_, __) => const PharmacyScreen()),
+      GoRoute(path: '/pharmacy', builder: (_, _) => const PharmacyScreen()),
 
       // ── AI & Symptom Checker ───────────────────────────────────────────
-      GoRoute(path: '/ai_chat', builder: (_, __) => const AIChatbotScreen()),
-      GoRoute(path: '/symptom_checker', builder: (_, __) => const SymptomCheckerScreen()),
+      GoRoute(path: '/ai_chat', builder: (_, _) => const AIChatbotScreen()),
+      GoRoute(path: '/symptom_checker', builder: (_, _) => const SymptomCheckerScreen()),
 
       // ── Chat ───────────────────────────────────────────────────────────
       GoRoute(
@@ -255,33 +255,33 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Notifications ──────────────────────────────────────────────────
-      GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+      GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
 
       // ── Help ───────────────────────────────────────────────────────────
-      GoRoute(path: '/help', builder: (_, __) => const HelpScreen()),
+      GoRoute(path: '/help', builder: (_, _) => const HelpScreen()),
 
       // ── Doctor Registration ────────────────────────────────────────────
       GoRoute(
         path: '/register-doctor',
-        builder: (_, __) => const DoctorRegisterScreen(),
+        builder: (_, _) => const DoctorRegisterScreen(),
       ),
 
       // ── Doctor Shell (tabs) ───────────────────────────────────────────
       GoRoute(
         path: '/doctor',
-        builder: (_, __) => const DoctorScaffold(initialIndex: 0),
+        builder: (_, _) => const DoctorScaffold(initialIndex: 0),
       ),
       GoRoute(
         path: '/doctor/appointments',
-        builder: (_, __) => const DoctorScaffold(initialIndex: 1),
+        builder: (_, _) => const DoctorScaffold(initialIndex: 1),
       ),
       GoRoute(
         path: '/doctor/patients',
-        builder: (_, __) => const DoctorScaffold(initialIndex: 2),
+        builder: (_, _) => const DoctorScaffold(initialIndex: 2),
       ),
       GoRoute(
         path: '/doctor/profile',
-        builder: (_, __) => const DoctorScaffold(initialIndex: 3),
+        builder: (_, _) => const DoctorScaffold(initialIndex: 3),
       ),
 
       // ── Doctor Detail Screens ─────────────────────────────────────────
@@ -307,7 +307,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Admin ─────────────────────────────────────────────────────────
       GoRoute(
         path: '/admin',
-        builder: (_, __) => const AdminDashboardScreen(),
+        builder: (_, _) => const AdminDashboardScreen(),
       ),
     ],
   );

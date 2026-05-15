@@ -11,13 +11,13 @@ class FileCard extends StatelessWidget {
   final VoidCallback? onShare;
 
   const FileCard({
-    Key? key,
+    super.key,
     required this.record,
     this.isGrid = false,
     this.onTap,
     this.onDelete,
     this.onShare,
-  }) : super(key: key);
+  });
 
   IconData get _fileIcon {
     switch (record.fileType) {

@@ -32,7 +32,7 @@ class PrescriptionService {
       'appointmentId': appointmentId,
       'diagnosis': diagnosis,
       'medicines': medicines.map((m) => m.toMap()).toList(),
-      if (notes != null) 'notes': notes,
+      'notes': ?notes,
       'createdAt': FieldValue.serverTimestamp(),
     });
 

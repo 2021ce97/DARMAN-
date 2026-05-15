@@ -10,6 +10,7 @@
 ///     --dart-define=HESABPAY_MERCHANT_ID=your_real_id
 ///
 /// Then read them with String.fromEnvironment() as shown below.
+library;
 
 class AppConfig {
   AppConfig._(); // prevent instantiation

@@ -11,14 +11,14 @@ class VideoControlButton extends StatelessWidget {
   final double size;
 
   const VideoControlButton({
-    Key? key,
+    super.key,
     required this.icon,
     required this.label,
     required this.isActive,
     required this.onTap,
     this.isDanger = false,
     this.size = 48,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +79,7 @@ class VideoControlsBar extends StatelessWidget {
   final VoidCallback onEndCall;
 
   const VideoControlsBar({
-    Key? key,
+    super.key,
     required this.isMicMuted,
     required this.isCameraOff,
     required this.isSpeakerOn,
@@ -89,7 +89,7 @@ class VideoControlsBar extends StatelessWidget {
     required this.onToggleSpeaker,
     required this.onToggleChat,
     required this.onEndCall,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +150,7 @@ class VideoControlsBar extends StatelessWidget {
 class SignalQualityIndicator extends StatelessWidget {
   final int quality; // 0-3: poor, fair, good, excellent
 
-  const SignalQualityIndicator({Key? key, this.quality = 3}) : super(key: key);
+  const SignalQualityIndicator({super.key, this.quality = 3});
 
   Color get _color {
     switch (quality) {

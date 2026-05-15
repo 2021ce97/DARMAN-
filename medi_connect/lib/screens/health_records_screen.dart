@@ -304,7 +304,7 @@ class HealthRecordsScreen extends ConsumerWidget {
                           ),
                       ],
                     ),
-                  )).toList(),
+                  )),
                 ],
               ),
             ),

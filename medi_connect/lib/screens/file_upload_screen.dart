@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
 class FileUploadScreen extends StatefulWidget {
-  const FileUploadScreen({Key? key}) : super(key: key);
+  const FileUploadScreen({super.key});
 
   @override
   State<FileUploadScreen> createState() => _FileUploadScreenState();

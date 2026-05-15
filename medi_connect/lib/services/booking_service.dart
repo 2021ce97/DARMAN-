@@ -47,7 +47,7 @@ class BookingService {
       'status': AppointmentStatus.pending.label,
       'type': type == AppointmentType.online ? 'Online' : 'Clinic Visit',
       'amount': amount,
-      if (notes != null) 'notes': notes,
+      'notes': ?notes,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -146,7 +146,7 @@ class BookingService {
 
     await _db.collection('appointments').doc(appointmentId).update({
       'status': AppointmentStatus.cancelled.label,
-      if (reason != null) 'cancellationReason': reason,
+      'cancellationReason': ?reason,
       'updatedAt': FieldValue.serverTimestamp(),
     });
 

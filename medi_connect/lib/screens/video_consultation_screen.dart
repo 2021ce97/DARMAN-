@@ -12,14 +12,14 @@ class VideoConsultationScreen extends StatefulWidget {
   final String role; // 'patient' or 'doctor'
 
   const VideoConsultationScreen({
-    Key? key,
+    super.key,
     required this.consultationId,
     required this.doctorName,
     required this.doctorSpecialty,
     this.doctorImageUrl,
     required this.userId,
     this.role = 'patient',
-  }) : super(key: key);
+  });
 
   @override
   State<VideoConsultationScreen> createState() =>

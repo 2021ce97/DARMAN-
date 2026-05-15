@@ -139,8 +139,9 @@ class _SymptomCheckerScreenState extends State<SymptomCheckerScreen> {
                       onPressed: () {
                         // Extract specialty from result
                         String specialty = '';
-                        if (_result!.contains('Cardiologist')) specialty = 'Cardiologist';
-                        else if (_result!.contains('General Physician')) specialty = 'General Physician';
+                        if (_result!.contains('Cardiologist')) {
+                          specialty = 'Cardiologist';
+                        } else if (_result!.contains('General Physician')) specialty = 'General Physician';
                         else if (_result!.contains('Gastroenterologist')) specialty = 'Gastroenterologist';
                         else if (_result!.contains('Dermatologist')) specialty = 'Dermatologist';
                         else if (_result!.contains('Pulmonologist')) specialty = 'Pulmonologist';

@@ -5,7 +5,7 @@ import '../widgets/prescription_card.dart';
 import 'prescription_detail_screen.dart';
 
 class PrescriptionListScreen extends StatefulWidget {
-  const PrescriptionListScreen({Key? key}) : super(key: key);
+  const PrescriptionListScreen({super.key});
 
   @override
   State<PrescriptionListScreen> createState() => _PrescriptionListScreenState();

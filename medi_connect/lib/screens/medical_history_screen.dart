@@ -50,7 +50,7 @@ class MedicalHistoryScreen extends ConsumerWidget {
                 return ListView.separated(
                   padding: const EdgeInsets.all(20),
                   itemCount: snapshot.data!.docs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  separatorBuilder: (_, _) => const SizedBox(height: 16),
                   itemBuilder: (context, i) {
                     final data = snapshot.data!.docs[i].data() as Map<String, dynamic>;
                     return _PrescriptionCard(data: data);
@@ -138,7 +138,7 @@ class _PrescriptionCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                )).toList(),
+                )),
               ],
             ),
           ),

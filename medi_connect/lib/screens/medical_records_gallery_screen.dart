@@ -28,7 +28,7 @@ class MedicalRecord {
 }
 
 class MedicalRecordsGalleryScreen extends StatefulWidget {
-  const MedicalRecordsGalleryScreen({Key? key}) : super(key: key);
+  const MedicalRecordsGalleryScreen({super.key});
 
   @override
   State<MedicalRecordsGalleryScreen> createState() =>

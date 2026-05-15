@@ -22,7 +22,7 @@ class NotificationService {
       'body': body,
       'type': type.label,
       'isRead': false,
-      if (referenceId != null) 'referenceId': referenceId,
+      'referenceId': ?referenceId,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }

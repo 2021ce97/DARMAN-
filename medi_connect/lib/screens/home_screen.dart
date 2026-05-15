@@ -51,7 +51,7 @@ class _HomeScreenApiState extends ConsumerState<HomeScreenApi> {
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             loading: () => const Text('Loading...'),
-                            error: (_, __) => const Text('User 👋'),
+                            error: (_, _) => const Text('User 👋'),
                           ),
                         ],
                       ),

@@ -604,7 +604,7 @@ class _MedicationEntryWidgetState extends State<_MedicationEntryWidget> {
           const SizedBox(height: 8),
           // Frequency dropdown
           DropdownButtonFormField<String>(
-            value: widget.entry.frequency,
+            initialValue: widget.entry.frequency,
             decoration: InputDecoration(
               hintText: 'Frequency',
               filled: true,

@@ -35,7 +35,7 @@ class _DoctorAppointmentDetailScreenState
           .doc(_appt.id)
           .update({
         'status': status.label,
-        if (reason != null) 'cancellationReason': reason,
+        'cancellationReason': ?reason,
         'updatedAt': FieldValue.serverTimestamp(),
       });
       setState(() {
@@ -89,7 +89,7 @@ class _DoctorAppointmentDetailScreenState
                     label: 'Name', value: _appt.patientName),
                 _DetailRow(
                     label: 'Patient ID',
-                    value: _appt.patientId.substring(0, 12) + '...'),
+                    value: '${_appt.patientId.substring(0, 12)}...'),
               ],
             ),
             const SizedBox(height: 12),

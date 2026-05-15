@@ -296,7 +296,7 @@ class _DoctorProfileEditScreenState
                             value: _isAvailableOnline,
                             onChanged: (v) =>
                                 setState(() => _isAvailableOnline = v),
-                            activeColor: AppColors.primary,
+                            activeThumbColor: AppColors.primary,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 4),
                           ),

@@ -4,7 +4,7 @@ import '../services/ai_chat_service.dart';
 import '../theme/app_colors.dart';
 
 class AIChatbotScreen extends StatefulWidget {
-  const AIChatbotScreen({Key? key}) : super(key: key);
+  const AIChatbotScreen({super.key});
 
   @override
   State<AIChatbotScreen> createState() => _AIChatbotScreenState();
