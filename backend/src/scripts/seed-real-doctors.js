@@ -14,11 +14,10 @@ if (!admin.apps.length) {
   admin.initializeApp({ credential: admin.credential.cert(sa) });
 }
 
-// Use the same Firestore accessor as create-test-user.js
 // Get Firestore and configure with database settings
 const db = admin.firestore();
 try {
-  db.settings({ ignoreUndefinedProperties: true });
+  db.settings({ ignoreUndefinedProperties: true, databaseId: 'default' });
 } catch(_) { /* already set */ }
 
 const realDoctors = [
