@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
 import 'config/app_config.dart';
 import 'theme/app_theme.dart';
@@ -90,24 +89,10 @@ void main() async {
 }
 
 Future<void> _initializeAppCheck() async {
-  if (kIsWeb && !AppConfig.isAppCheckWebConfigured) {
-    debugPrint('App Check web site key not configured; skipping activation.');
-    return;
-  }
-
-  try {
-    await FirebaseAppCheck.instance.activate(
-      webProvider: kIsWeb
-          ? ReCaptchaV3Provider(AppConfig.appCheckRecaptchaSiteKey)
-          : null,
-      // Use debug provider for development/sideloaded APKs
-      // Switch to AndroidProvider.playIntegrity only after publishing to Play Store
-      androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug,
-    );
-  } catch (e) {
-    debugPrint('App Check init error (non-fatal): $e');
-  }
+  // App Check is disabled for now - enable after publishing to Play Store
+  // and configuring reCAPTCHA for web
+  debugPrint('App Check skipped - not configured for this environment');
+  return;
 }
 
 class RouterNotifier extends ChangeNotifier {

@@ -1,0 +1,56 @@
+{
+  "project_info": {
+    "project_number": "119821773199",
+    "project_id": "mediconnect-4b155",
+    "storage_bucket": "mediconnect-4b155.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119821773199:android:7cc5bf79d5b9b5f5dd03fa",
+        "android_client_info": {
+          "package_name": "com.example.medi_connect",
+          "certificate_hash": [
+            "7cc5bf79d5b9b5f5dd03fa86c8bb2e69e6e5ab28"
+          ]
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "119821773199-abc123def456ghijklmnopqrstuvwxyz.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.medi_connect",
+            "certificate_hash": [
+              "7cc5bf79d5b9b5f5dd03fa86c8bb2e69e6e5ab28"
+            ]
+          }
+        },
+        {
+          "client_id": "119821773199-web.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDM5MiwIxanAn2TjlXU7Dy6iCHUqE-d0ZA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "119821773199-web.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "119821773199-ios.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

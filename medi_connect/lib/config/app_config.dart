@@ -24,7 +24,7 @@ class AppConfig {
   /// Get key at: https://aistudio.google.com/app/apikey
   static const String geminiApiKey = String.fromEnvironment(
     'GEMINI_API_KEY',
-    defaultValue: 'REPLACE_WITH_GEMINI_API_KEY', // ← replace for production
+    defaultValue: 'AIzaSyCtueu8a8qNFYUeVO3HXaVLOCpOr-hiZIw',
   );
   static const String geminiModel = 'gemini-1.5-flash';
 
