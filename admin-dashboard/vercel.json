@@ -5,6 +5,6 @@
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://darman-api.onrender.com/api/v1"
+    "NEXT_PUBLIC_API_URL": "https://darman.onrender.com/api/v1"
   }
 }

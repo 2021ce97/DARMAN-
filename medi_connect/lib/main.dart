@@ -100,8 +100,10 @@ Future<void> _initializeAppCheck() async {
       webProvider: kIsWeb
           ? ReCaptchaV3Provider(AppConfig.appCheckRecaptchaSiteKey)
           : null,
-      androidProvider: AndroidProvider.playIntegrity,
-      appleProvider: AppleProvider.deviceCheck,
+      // Use debug provider for development/sideloaded APKs
+      // Switch to AndroidProvider.playIntegrity only after publishing to Play Store
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.debug,
     );
   } catch (e) {
     debugPrint('App Check init error (non-fatal): $e');
