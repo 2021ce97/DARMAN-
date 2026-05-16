@@ -8,12 +8,18 @@ import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Initialize Firebase Admin directly (same pattern as create-test-user.js)
+// Initialize Firebase Admin
 const sa = JSON.parse(readFileSync('./serviceAccountKey.json', 'utf8'));
 if (!admin.apps.length) {
   admin.initializeApp({ credential: admin.credential.cert(sa) });
 }
+
+// Use the same Firestore accessor as create-test-user.js
+// Get Firestore and configure with database settings
 const db = admin.firestore();
+try {
+  db.settings({ ignoreUndefinedProperties: true });
+} catch(_) { /* already set */ }
 
 const realDoctors = [
   {
@@ -206,6 +212,22 @@ async function seedDoctors() {
   console.log('🏥 Seeding Real Doctor Accounts...\n');
   console.log('═══════════════════════════════════════════════════\n');
 
+  // First test Firestore connectivity
+  console.log('🔍 Testing Firestore connectivity...');
+  try {
+    const testRef = db.collection('_test_connectivity');
+    const testDoc = await testRef.add({ test: true, ts: new Date().toISOString() });
+    await testRef.doc(testDoc.id).delete();
+    console.log('✅ Firestore is accessible!\n');
+  } catch (e) {
+    console.error('❌ Firestore connection failed:', e.message);
+    console.error('   Please ensure the Firestore database exists at:');
+    console.error('   https://console.firebase.google.com/project/mediconnect-4b155/firestore');
+    console.error('\n   The doctor Auth accounts were created, but Firestore profiles could not be written.');
+    console.error('   You may need to create the Firestore database first.\n');
+    // Continue anyway with Auth-only creation
+  }
+
   const results = [];
 
   for (const doc of realDoctors) {
@@ -219,7 +241,7 @@ async function seedDoctors() {
           emailVerified: true,
           disabled: false,
         });
-        console.log(`ℹ️  Updated existing: ${doc.email}`);
+        console.log(`ℹ️  Updated existing Auth: ${doc.email}`);
       } catch (_) {
         userRecord = await admin.auth().createUser({
           email: doc.email,
@@ -227,37 +249,44 @@ async function seedDoctors() {
           displayName: doc.displayName,
           emailVerified: true,
         });
-        console.log(`✅ Created new: ${doc.email}`);
+        console.log(`✅ Created new Auth: ${doc.email}`);
       }
 
       // Set custom claims
       await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'doctor' });
 
-      // Create user document
-      await db.collection('users').doc(userRecord.uid).set({
-        uid: userRecord.uid,
-        email: doc.email,
-        fullName: doc.displayName,
-        name: doc.displayName,
-        role: 'doctor',
-        status: 'verified',
-        isBanned: false,
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      }, { merge: true });
+      // Try Firestore writes
+      try {
+        // Create user document
+        await db.collection('users').doc(userRecord.uid).set({
+          uid: userRecord.uid,
+          email: doc.email,
+          fullName: doc.displayName,
+          name: doc.displayName,
+          role: 'doctor',
+          status: 'verified',
+          isBanned: false,
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
 
-      // Create doctor profile document
-      await db.collection('doctors').doc(userRecord.uid).set({
-        userId: userRecord.uid,
-        fullName: doc.displayName,
-        name: doc.displayName,
-        email: doc.email,
-        status: 'verified',
-        verifiedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        ...doc.profile,
-      }, { merge: true });
+        // Create doctor profile document
+        await db.collection('doctors').doc(userRecord.uid).set({
+          userId: userRecord.uid,
+          fullName: doc.displayName,
+          name: doc.displayName,
+          email: doc.email,
+          status: 'verified',
+          verifiedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          ...doc.profile,
+        }, { merge: true });
+
+        console.log(`   ✅ Firestore profile created`);
+      } catch (fsErr) {
+        console.log(`   ⚠️  Firestore write skipped: ${fsErr.message}`);
+      }
 
       results.push({
         name: doc.displayName,
@@ -277,7 +306,7 @@ async function seedDoctors() {
   }
 
   console.log('═══════════════════════════════════════════════════');
-  console.log('\n🎉 Doctor accounts seeded successfully!\n');
+  console.log('\n🎉 Doctor accounts seeded!\n');
   console.log('📋 DOCTOR LOGIN CREDENTIALS:');
   console.log('═══════════════════════════════════════════════════');
   for (const r of results) {
@@ -289,7 +318,7 @@ async function seedDoctors() {
     console.log('');
   }
   console.log('═══════════════════════════════════════════════════');
-  console.log(`\n✅ Total: ${results.length} doctors registered`);
+  console.log(`\n✅ Total: ${results.length} doctors with Auth accounts`);
   console.log('🌐 Login at: https://mediconnect-4b155.web.app/login');
   console.log('📱 Or use the DARMAN mobile app\n');
 
