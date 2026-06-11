@@ -4,6 +4,7 @@ import '../providers/chat_provider.dart';
 import '../services/chat_firestore_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/message_bubble.dart';
+import '../models/chat_message_model.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String? doctorId;
@@ -101,6 +102,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final title = widget.isAIChat
       ? 'AI Health Assistant'
       : (widget.doctorName ?? 'Chat');
+    final chatState = ref.watch(chatProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -109,38 +111,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         titleSpacing: 0,
-        title: Row(
+          body: Column(
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: widget.isAIChat
-                  ? Colors.purple.withOpacity(0.15)
-                  : AppColors.primary.withOpacity(0.15),
-              backgroundImage: widget.doctorImageUrl != null
-                  ? NetworkImage(widget.doctorImageUrl!)
-                  : null,
-              child: widget.doctorImageUrl == null
-                  ? Icon(
-                      widget.isAIChat ? Icons.smart_toy_outlined : Icons.person,
-                      size: 18,
-                      color: widget.isAIChat ? Colors.purple : AppColors.primary,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                Text(
-                  widget.isAIChat ? 'Powered by Gemini AI' : (widget.doctorSpecialty ?? 'Online'),
-                  style: const TextStyle(fontSize: 11, color: AppColors.textHint),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
+            child: widget.isAIChat
+                ? Builder(
+                    builder: (context) {
+                      if (chatState.messages.isEmpty) {
+                        return const Center(
+                          child: Text('Start a conversation', style: TextStyle(color: AppColors.textHint)),
+                        );
+                      }
+                      return ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: chatState.messages.length,
+                        itemBuilder: (context, index) {
+                          final msg = chatState.messages[index];
+                          return MessageBubble(
+                            message: msg.content,
+                            isMe: msg.isUser,
+                            senderName: msg.isUser ? 'You' : title,
+                            timestamp: msg.timestamp,
+                            deliveredAt: msg.deliveredAt,
+                            readAt: msg.readAt,
+                            avatarUrl: msg.isUser ? null : widget.doctorImageUrl,
+                            showAvatar: !msg.isUser,
+                          );
+                        },
+                      );
+                    },
+                  )
+                : (_messagesStream == null)
           if (widget.isAIChat)
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
@@ -173,6 +176,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             isMe: msg.isUser,
                             senderName: msg.isUser ? 'You' : title,
                             timestamp: msg.timestamp,
+                            deliveredAt: msg.deliveredAt,
+                            readAt: msg.readAt,
                             avatarUrl: msg.isUser ? null : widget.doctorImageUrl,
                             showAvatar: !msg.isUser,
                           );
@@ -207,6 +212,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 isMe: msg.isUser,
                                 senderName: msg.isUser ? 'You' : title,
                                 timestamp: msg.timestamp,
+                                deliveredAt: msg.deliveredAt,
+                                readAt: msg.readAt,
                                 avatarUrl: msg.isUser ? null : widget.doctorImageUrl,
                                 showAvatar: !msg.isUser,
                               );

@@ -107,10 +107,14 @@ Future<void> _initializeAppCheck() async {
     // Web: use reCAPTCHA site key (must be configured via dart-define or env)
     if (kIsWeb) {
       if (AppConfig.isAppCheckWebConfigured) {
-        await FirebaseAppCheck.instance.activate(
-          webRecaptchaSiteKey: AppConfig.appCheckRecaptchaSiteKey,
-        );
-        debugPrint('App Check (web) activated');
+        try {
+          // Some firebase_app_check versions don't accept a webRecaptchaSiteKey parameter.
+          // Call activate() without parameters to support older SDKs.
+          await FirebaseAppCheck.instance.activate();
+          debugPrint('App Check (web) activated (no webRecaptchaSiteKey param)');
+        } catch (e) {
+          debugPrint('App Check (web) activation skipped or not supported in this SDK: $e');
+        }
       } else {
         debugPrint('App Check (web) not configured; skipping');
       }
