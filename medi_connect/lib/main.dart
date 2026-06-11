@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
 import 'config/app_config.dart';
 import 'theme/app_theme.dart';
@@ -89,10 +90,42 @@ void main() async {
 }
 
 Future<void> _initializeAppCheck() async {
-  // App Check is disabled for now - enable after publishing to Play Store
-  // and configuring reCAPTCHA for web
-  debugPrint('App Check skipped - not configured for this environment');
-  return;
+  try {
+    // Web: use reCAPTCHA site key (must be configured via dart-define or env)
+    if (kIsWeb) {
+      if (AppConfig.isAppCheckWebConfigured) {
+        await FirebaseAppCheck.instance.activate(
+          webRecaptchaSiteKey: AppConfig.appCheckRecaptchaSiteKey,
+        );
+        debugPrint('App Check (web) activated');
+      } else {
+        debugPrint('App Check (web) not configured; skipping');
+      }
+      return;
+    }
+
+    // Mobile: prefer Play Integrity on Android, DeviceCheck on iOS
+    try {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.playIntegrity,
+        appleProvider: AppleProvider.deviceCheck,
+      );
+      debugPrint('App Check (mobile) activated using Play Integrity / DeviceCheck');
+    } catch (e) {
+      // Fallback to SafetyNet if Play Integrity not available
+      try {
+        await FirebaseAppCheck.instance.activate(
+          androidProvider: AndroidProvider.safetyNet,
+          appleProvider: AppleProvider.deviceCheck,
+        );
+        debugPrint('App Check (mobile) activated using SafetyNet / DeviceCheck');
+      } catch (e2) {
+        debugPrint('App Check activation failed: $e / $e2');
+      }
+    }
+  } catch (e, st) {
+    debugPrint('App Check init error (non-fatal): $e\n$st');
+  }
 }
 
 class RouterNotifier extends ChangeNotifier {
