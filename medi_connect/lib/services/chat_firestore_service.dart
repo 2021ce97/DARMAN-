@@ -39,59 +39,91 @@ class ChatFirestoreService {
         .orderBy('timestamp', descending: false)
         .snapshots()
         .map((snap) {
-      return snap.docs.map((d) {
-        final data = d.data();
-        final senderId = data['senderId'] as String? ?? '';
-        final timestampRaw = data['timestamp'];
-        DateTime ts;
-        if (timestampRaw is Timestamp) {
-          ts = timestampRaw.toDate();
-        } else if (timestampRaw is String) {
-          ts = DateTime.tryParse(timestampRaw) ?? DateTime.now();
-        } else {
-          ts = DateTime.now();
-        }
+          return snap.docs.map((d) {
+            final data = d.data();
+            final senderId = data['senderId'] as String? ?? '';
+            final timestampRaw = data['timestamp'];
+            DateTime ts;
+            if (timestampRaw is Timestamp) {
+              ts = timestampRaw.toDate();
+            } else if (timestampRaw is String) {
+              ts = DateTime.tryParse(timestampRaw) ?? DateTime.now();
+            } else {
+              ts = DateTime.now();
+            }
 
-        // Parse deliveredAt / readAt if present
-        DateTime? delivered;
-        DateTime? read;
-        final deliveredRaw = data['deliveredAt'];
-        final readRaw = data['readAt'];
-        if (deliveredRaw is Timestamp) delivered = deliveredRaw.toDate();
-        else if (deliveredRaw is String) delivered = DateTime.tryParse(deliveredRaw);
-        if (readRaw is Timestamp) read = readRaw.toDate();
-        else if (readRaw is String) read = DateTime.tryParse(readRaw);
+            // Parse deliveredAt / readAt if present. Prefer per-recipient
+            // metadata.deliveredTo.<uid> when available, otherwise fall back
+            // to top-level deliveredAt. readAt is read from top-level.
+            DateTime? delivered;
+            DateTime? read;
+            final deliveredRaw = data['deliveredAt'];
+            final readRaw = data['readAt'];
+            // Top-level values
+            if (deliveredRaw is Timestamp)
+              delivered = deliveredRaw.toDate();
+            else if (deliveredRaw is String)
+              delivered = DateTime.tryParse(deliveredRaw);
+            if (readRaw is Timestamp)
+              read = readRaw.toDate();
+            else if (readRaw is String)
+              read = DateTime.tryParse(readRaw);
 
-        return ChatMessage(
-          id: d.id,
-          content: data['content'] ?? '',
-          isUser: senderId == _auth.currentUser?.uid,
-          timestamp: ts,
-          deliveredAt: delivered,
-          readAt: read,
-          type: _parseMessageType(data['type'] as String?),
-          metadata: data['metadata'] != null ? Map<String, dynamic>.from(data['metadata']) : null,
-        );
-      }).toList();
-    });
+            // Prefer per-recipient delivered timestamp when present
+            try {
+              final meta = data['metadata'];
+              if (meta is Map && _auth.currentUser != null) {
+                final deliveredMap = meta['deliveredTo'];
+                if (deliveredMap is Map) {
+                  final myDeliveredRaw = deliveredMap[_auth.currentUser!.uid];
+                  if (myDeliveredRaw is Timestamp)
+                    delivered = myDeliveredRaw.toDate();
+                  else if (myDeliveredRaw is String)
+                    delivered = DateTime.tryParse(myDeliveredRaw) ?? delivered;
+                }
+              }
+            } catch (e) {
+              // ignore metadata parsing errors and fall back to top-level
+            }
+
+            return ChatMessage(
+              id: d.id,
+              content: data['content'] ?? '',
+              isUser: senderId == _auth.currentUser?.uid,
+              timestamp: ts,
+              deliveredAt: delivered,
+              readAt: read,
+              type: _parseMessageType(data['type'] as String?),
+              metadata: data['metadata'] != null
+                  ? Map<String, dynamic>.from(data['metadata'])
+                  : null,
+            );
+          }).toList();
+        });
 
     return msgs;
   }
 
-  Future<void> sendMessage(String chatId, String content,
-      {String type = 'text', Map<String, dynamic>? metadata}) async {
+  Future<void> sendMessage(
+    String chatId,
+    String content, {
+    String type = 'text',
+    Map<String, dynamic>? metadata,
+  }) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Not authenticated');
 
-    final msgRef = _db.collection('chats').doc(chatId).collection('messages').doc();
+    final msgRef = _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc();
     await msgRef.set({
       'senderId': user.uid,
       'content': content,
       'type': type,
       'metadata': metadata ?? {},
       'timestamp': FieldValue.serverTimestamp(),
-      'deliveredAt': FieldValue.serverTimestamp(),
-      'readAt': null,
     });
 
     // Update chat document lastMessage/updatedAt
