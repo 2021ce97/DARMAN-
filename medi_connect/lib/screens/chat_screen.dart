@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
+import '../services/chat_firestore_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/message_bubble.dart';
 
@@ -27,12 +28,36 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  String? _chatId;
+  Stream<List<ChatMessage>>? _messagesStream;
 
   @override
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.isAIChat && widget.doctorId != null) {
+      // Initialize chat stream for existing conversations
+      Future.microtask(() async {
+        try {
+          final svc = ref.read(chatFirestoreServiceProvider);
+          final id = await svc.getOrCreateChatId(doctorId: widget.doctorId!);
+          if (mounted) {
+            setState(() {
+              _chatId = id;
+              _messagesStream = svc.messagesStream(id);
+            });
+          }
+        } catch (e) {
+          debugPrint('Chat init error: $e');
+        }
+      });
+    }
   }
 
   void _scrollToBottom() {
@@ -51,21 +76,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     _controller.clear();
-    await ref.read(chatProvider.notifier).sendMessage(text);
+    if (widget.isAIChat) {
+      await ref.read(chatProvider.notifier).sendMessage(text);
+    } else {
+      // Firestore-based doctor/patient chat
+      if (widget.doctorId == null) return;
+      final svc = ref.read(chatFirestoreServiceProvider);
+      if (_chatId == null) {
+        final id = await svc.getOrCreateChatId(doctorId: widget.doctorId!);
+        setState(() {
+          _chatId = id;
+          _messagesStream = svc.messagesStream(id);
+        });
+        await svc.sendMessage(id, text);
+      } else {
+        await svc.sendMessage(_chatId!, text);
+      }
+    }
     _scrollToBottom();
   }
 
   @override
   Widget build(BuildContext context) {
-    final chatState = ref.watch(chatProvider);
     final title = widget.isAIChat
-        ? 'AI Health Assistant'
-        : (widget.doctorName ?? 'Chat');
-
-    // Auto-scroll when new messages arrive
-    if (chatState.messages.isNotEmpty) {
-      _scrollToBottom();
-    }
+      ? 'AI Health Assistant'
+      : (widget.doctorName ?? 'Chat');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -118,26 +153,62 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           // Messages
           Expanded(
-            child: chatState.messages.isEmpty
-                ? const Center(
-                    child: Text('Start a conversation', style: TextStyle(color: AppColors.textHint)),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: chatState.messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = chatState.messages[index];
-                      return MessageBubble(
-                        message: msg.content,
-                        isMe: msg.isUser,
-                        senderName: msg.isUser ? 'You' : title,
-                        timestamp: msg.timestamp,
-                        avatarUrl: msg.isUser ? null : widget.doctorImageUrl,
-                        showAvatar: !msg.isUser,
+            child: widget.isAIChat
+                ? Consumer(
+                    builder: (context, ref, _) {
+                      final chatState = ref.watch(chatProvider);
+                      if (chatState.messages.isEmpty) {
+                        return const Center(
+                          child: Text('Start a conversation', style: TextStyle(color: AppColors.textHint)),
+                        );
+                      }
+                      return ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: chatState.messages.length,
+                        itemBuilder: (context, index) {
+                          final msg = chatState.messages[index];
+                          return MessageBubble(
+                            message: msg.content,
+                            isMe: msg.isUser,
+                            senderName: msg.isUser ? 'You' : title,
+                            timestamp: msg.timestamp,
+                            avatarUrl: msg.isUser ? null : widget.doctorImageUrl,
+                            showAvatar: !msg.isUser,
+                          );
+                        },
                       );
                     },
-                  ),
+                  )
+                : (_messagesStream == null)
+                    ? const Center(child: CircularProgressIndicator())
+                    : StreamBuilder<List<ChatMessage>>(
+                        stream: _messagesStream,
+                        builder: (context, snapshot) {
+                          final messages = snapshot.data ?? [];
+                          if (messages.isEmpty) {
+                            return const Center(
+                              child: Text('Start a conversation', style: TextStyle(color: AppColors.textHint)),
+                            );
+                          }
+                          return ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(16),
+                            itemCount: messages.length,
+                            itemBuilder: (context, index) {
+                              final msg = messages[index];
+                              return MessageBubble(
+                                message: msg.content,
+                                isMe: msg.isUser,
+                                senderName: msg.isUser ? 'You' : title,
+                                timestamp: msg.timestamp,
+                                avatarUrl: msg.isUser ? null : widget.doctorImageUrl,
+                                showAvatar: !msg.isUser,
+                              );
+                            },
+                          );
+                        },
+                      ),
           ),
 
           // Typing indicator
