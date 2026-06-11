@@ -6,6 +6,8 @@ class MessageBubble extends StatelessWidget {
   final bool isMe;
   final String senderName;
   final DateTime timestamp;
+  final DateTime? deliveredAt;
+  final DateTime? readAt;
   final String? avatarUrl;
   final bool showAvatar;
 
@@ -15,6 +17,8 @@ class MessageBubble extends StatelessWidget {
     required this.isMe,
     required this.senderName,
     required this.timestamp,
+    this.deliveredAt,
+    this.readAt,
     this.avatarUrl,
     this.showAvatar = true,
   });
@@ -90,6 +94,11 @@ class MessageBubble extends StatelessWidget {
                     style: const TextStyle(fontSize: 10, color: AppColors.textHint),
                   ),
                 ),
+                if (isMe)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2, left: 4, right: 4),
+                    child: _buildStatus(),
+                  ),
               ],
             ),
           ),
@@ -104,6 +113,49 @@ class MessageBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildStatus() {
+    // read > delivered > pending
+    if (readAt != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.done_all, size: 14, color: Colors.blue[400]),
+          const SizedBox(width: 6),
+          Text(_relativeTime(readAt!), style: const TextStyle(fontSize: 10, color: AppColors.textHint)),
+        ],
+      );
+    }
+
+    if (deliveredAt != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.done_all, size: 14, color: AppColors.textHint),
+          const SizedBox(width: 6),
+          Text(_relativeTime(deliveredAt!), style: const TextStyle(fontSize: 10, color: AppColors.textHint)),
+        ],
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: const [
+        Icon(Icons.access_time, size: 12, color: AppColors.textHint),
+        SizedBox(width: 6),
+        Text('Sending', style: TextStyle(fontSize: 10, color: AppColors.textHint)),
+      ],
+    );
+  }
+
+  String _relativeTime(DateTime t) {
+    final now = DateTime.now();
+    final diff = now.difference(t);
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    return '${diff.inDays}d';
   }
 
   String _formatTime(DateTime time) {

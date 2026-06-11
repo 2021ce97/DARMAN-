@@ -359,3 +359,56 @@ export const onPrescriptionCreated = functions.firestore
       ),
     ]);
   });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRIGGER X: New chat message created — send FCM + in-app notification
+// Also update message metadata with delivered timestamps per recipient
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const onChatMessageCreated = functions.firestore
+  .document("chats/{chatId}/messages/{messageId}")
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    const chatId = context.params.chatId;
+    const messageId = context.params.messageId;
+
+    if (!data) return;
+
+    const senderId: string = data.senderId;
+    const content: string = data.content ?? '';
+
+    try {
+      // Load chat participants
+      const chatDoc = await db.collection('chats').doc(chatId).get();
+      const participants: string[] = chatDoc.data()?.participants || [];
+
+      // Notify all recipients (participants excluding sender)
+      const recipients = participants.filter((p) => p && p !== senderId);
+
+      await Promise.all(recipients.map(async (recipientId) => {
+        try {
+          const title = 'New message';
+          const body = content.length > 120 ? content.substring(0, 117) + '...' : content;
+
+          // Send push and create in-app notification
+          await sendPushToUser(recipientId, title, body, {
+            type: 'chat_message',
+            chatId,
+            messageId,
+          });
+
+          await createNotification(recipientId, title, body, 'chat_message', chatId);
+
+          // Mark message as delivered to this recipient in metadata.deliveredTo
+          const field = `metadata.deliveredTo.${recipientId}`;
+          await db.collection('chats').doc(chatId).collection('messages').doc(messageId).set({
+            [field]: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+        } catch (err) {
+          functions.logger.error('Failed to notify recipient', recipientId, err);
+        }
+      }));
+    } catch (err) {
+      functions.logger.error('onChatMessageCreated error:', err);
+    }
+  });
