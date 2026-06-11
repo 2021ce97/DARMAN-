@@ -7,7 +7,6 @@
 ## ✅ WHAT'S BEEN COMPLETED
 
 ### 1. **Gemini API Key Configured** ✅
-### 1. **Gemini API Key Configured** ✅
 - **Status**: ACTIVE in `backend/.env`
 - **Key**: `<REDACTED — set GEMINI_API_KEY in backend/.env or Render env vars>`
 - **Features Enabled**: AI Chatbot for symptom checking
@@ -109,9 +108,9 @@ Doctor Register:  https://mediconnect-4b155.web.app/register-doctor
 
 ### Test Login Credentials (Demo - Change These!)
 ```
-Patient:  patient@darman.af / Darman2026!
-Doctor:   doctor@darman.af  / Darman2026!
-Admin:    admin@darman.af   / Darman2026!
+Patient:  patient@darman.af / <set-a-secure-password-locally>
+Doctor:   doctor@darman.af  / <set-a-secure-password-locally>
+Admin:    admin@darman.af   / <set-a-secure-password-locally>
 ```
 
 ### Features to Test
@@ -130,10 +129,10 @@ Admin:    admin@darman.af   / Darman2026!
 ## 🔑 API KEYS CONFIGURED
 
 ### ✅ Gemini API (ACTIVE)
-- **Key**: AIzaSyAe2pHfMHQw9G7dU9_ZFfYhgbMfr0sVz4c
-- **Location**: `backend/.env` line 27
+- **Key**: `<REDACTED — set GEMINI_API_KEY in backend/.env or Render env vars>`
+- **Location**: `backend/.env` (local) or Render environment variables (production)
 - **Features**: AI chatbot for symptom checking
-- **Status**: Ready to use
+- **Status**: Ready to use (ensure secret is not committed)
 
 ### ⏳ Optional: Agora (Video Calls)
 ```
@@ -170,14 +169,14 @@ To enable payments:
 
 ### Phase 2: Web App Testing (30 min)
 - [ ] Open https://mediconnect-4b155.web.app
-- [ ] Login as patient@darman.af / Darman2026!
+- [ ] Login as patient@darman.af / <use-secure-password>
 - [ ] View doctor list
 - [ ] Book appointment
 - [ ] Logout
-- [ ] Login as doctor@darman.af / Darman2026!
+- [ ] Login as doctor@darman.af / <use-secure-password>
 - [ ] View appointments and prescriptions
 - [ ] Logout
-- [ ] Login as admin@darman.af / Darman2026!
+- [ ] Login as admin@darman.af / <use-secure-password>
 - [ ] View user management dashboard
 
 ### Phase 3: Mobile App Testing (45 min)
@@ -299,7 +298,7 @@ firebase deploy --only hosting
 cat backend/.env | grep GEMINI
 
 # If missing, add:
-GEMINI_API_KEY=AIzaSyAe2pHfMHQw9G7dU9_ZFfYhgbMfr0sVz4c
+GEMINI_API_KEY=<REDACTED - set via environment variables (do NOT commit)>
 
 # Redeploy backend to Render
 git add backend/.env

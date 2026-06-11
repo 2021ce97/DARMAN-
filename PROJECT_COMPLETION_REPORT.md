@@ -52,7 +52,7 @@
 | dr.ahmadzai@darman.af | Doctor | ✅ YES | ✅ YES |
 | dr.sultani@darman.af | Doctor | ✅ YES | ✅ YES |
 
-**All passwords:** `Darman2026!`
+**All passwords:** `<REDACTED — no default password committed; set per-environment during onboarding>`
 
 ---
 
