@@ -1,0 +1,63 @@
+// Suggested hardened Firestore rules (for review)
+// DO NOT APPLY DIRECTLY to production without testing in the Firebase emulator.
+// Summary of recommended, minimal changes:
+// 1) Require auth for previously-public reads (doctors, reviews) to reduce data scraping.
+// 2) Keep strict write validations and admin-only updates for sensitive fields.
+// 3) Provide this file as a reviewed candidate; keep live file unchanged until approved.
+
+// Example diffs (apply manually or with CI after review):
+// - In `match /doctors/{doctorId}` change `allow read: if true;` to `allow read: if isAuth();`
+// - In `match /reviews/{reviewId}` change `allow read: if true;` to `allow read: if isAuth();`
+
+// Below are suggested replacements for the two zones above. They intentionally
+// mirror existing rule structure but require authenticated reads.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() { return request.auth != null; }
+
+    // --- Doctors: require auth to read profiles (prevents public scraping) ---
+    match /doctors/{doctorId} {
+      allow read: if isAuth();
+      allow create: if isAuth()
+        && isNotBanned()
+        && (doctorId == request.auth.uid
+          || request.resource.data.get('userId', '') == request.auth.uid
+          || isAdmin());
+      allow update: if isAdmin() || (
+        isDoctor()
+        && isNotBanned()
+        && (resource.data.get('userId', '') == request.auth.uid || doctorId == request.auth.uid)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['status', 'verifiedAt', 'verifiedBy'])
+      );
+      allow delete: if isAdmin();
+
+      match /availability/{dateId} {
+        allow read: if isAuth();
+        allow write: if isAdmin() || (
+          isDoctor()
+          && get(/databases/$(database)/documents/doctors/$(doctorId)).data.get('userId', '') == request.auth.uid
+        );
+      }
+    }
+
+    // --- Reviews: require auth to view reviews to limit scraping ---
+    match /reviews/{reviewId} {
+      allow read: if isAuth();
+      allow create: if isPatient()
+        && isNotBanned()
+        && request.resource.data.patientId == request.auth.uid;
+      allow update: if isAuth() && resource.data.patientId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // NOTE: This file is a suggestion. The existing `firestore.rules` file
+    // already contains many necessary protections (role checks, admin gates).
+    // Apply only the small, reviewed changes above and run the Firebase
+    // emulator tests and integration QA before deploying.
+
+  }
+}
