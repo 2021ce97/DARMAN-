@@ -18,6 +18,24 @@ services:
         value: firebase-adminsdk-fbsvc@mediconnect-4b155.iam.gserviceaccount.com
       - key: FIREBASE_PRIVATE_KEY
         sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_PATH
+        value: ""
+      - key: GEMINI_API_KEY
+        value: "AIzaSyCtueu8a8qNFYUeVO3HXaVLOCpOr-hiZIw"
+      - key: AGORA_APP_ID
+        sync: false
+      - key: AGORA_APP_CERTIFICATE
+        sync: false
+      - key: HESABPAY_API_KEY
+        sync: false
+      - key: HESABPAY_MERCHANT_ID
+        sync: false
+      - key: HESABPAY_BASE_URL
+        value: "https://api.hesabpay.af"
+      - key: SMS_API_KEY
+        sync: false
+      - key: SMS_SENDER_ID
+        value: "MediConnect"
       - key: JWT_SECRET
         generateValue: true
       - key: RATE_LIMIT_MAX
