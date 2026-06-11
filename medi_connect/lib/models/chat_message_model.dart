@@ -3,6 +3,8 @@ class ChatMessage {
   final String content;
   final bool isUser;
   final DateTime timestamp;
+  final DateTime? deliveredAt;
+  final DateTime? readAt;
   final MessageType type;
   final Map<String, dynamic>? metadata;
 
@@ -11,6 +13,8 @@ class ChatMessage {
     required this.content,
     required this.isUser,
     required this.timestamp,
+    this.deliveredAt,
+    this.readAt,
     this.type = MessageType.text,
     this.metadata,
   });
@@ -25,6 +29,8 @@ class ChatMessage {
           : DateTime.now(),
       type: _parseMessageType(json['type']),
       metadata: json['metadata'],
+      deliveredAt: json['deliveredAt'] != null ? DateTime.tryParse(json['deliveredAt'].toString()) : null,
+      readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt'].toString()) : null,
     );
   }
 
@@ -47,6 +53,8 @@ class ChatMessage {
       'content': content,
       'isUser': isUser,
       'timestamp': timestamp.toIso8601String(),
+      'deliveredAt': deliveredAt?.toIso8601String(),
+      'readAt': readAt?.toIso8601String(),
       'type': type.toString().split('.').last,
       'metadata': metadata,
     };

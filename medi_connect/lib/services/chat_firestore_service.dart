@@ -52,11 +52,23 @@ class ChatFirestoreService {
           ts = DateTime.now();
         }
 
+        // Parse deliveredAt / readAt if present
+        DateTime? delivered;
+        DateTime? read;
+        final deliveredRaw = data['deliveredAt'];
+        final readRaw = data['readAt'];
+        if (deliveredRaw is Timestamp) delivered = deliveredRaw.toDate();
+        else if (deliveredRaw is String) delivered = DateTime.tryParse(deliveredRaw);
+        if (readRaw is Timestamp) read = readRaw.toDate();
+        else if (readRaw is String) read = DateTime.tryParse(readRaw);
+
         return ChatMessage(
           id: d.id,
           content: data['content'] ?? '',
           isUser: senderId == _auth.currentUser?.uid,
           timestamp: ts,
+          deliveredAt: delivered,
+          readAt: read,
           type: _parseMessageType(data['type'] as String?),
           metadata: data['metadata'] != null ? Map<String, dynamic>.from(data['metadata']) : null,
         );
@@ -78,6 +90,8 @@ class ChatFirestoreService {
       'type': type,
       'metadata': metadata ?? {},
       'timestamp': FieldValue.serverTimestamp(),
+      'deliveredAt': FieldValue.serverTimestamp(),
+      'readAt': null,
     });
 
     // Update chat document lastMessage/updatedAt
@@ -85,6 +99,31 @@ class ChatFirestoreService {
       'lastMessage': content,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  /// Mark unread messages as read for the current user.
+  Future<void> markMessagesRead(String chatId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final msgsRef = _db.collection('chats').doc(chatId).collection('messages');
+    try {
+      final query = await msgsRef.where('readAt', isNull: true).get();
+      final batch = _db.batch();
+      var count = 0;
+      for (final doc in query.docs) {
+        final data = doc.data();
+        final senderId = data['senderId'] as String? ?? '';
+        if (senderId != user.uid) {
+          batch.update(doc.reference, {'readAt': FieldValue.serverTimestamp()});
+          count++;
+        }
+      }
+      if (count > 0) await batch.commit();
+    } catch (e) {
+      // Non-fatal
+      print('markMessagesRead error: $e');
+    }
   }
 
   MessageType _parseMessageType(String? type) {

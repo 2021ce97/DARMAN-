@@ -52,6 +52,19 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Optional: connect to local Firebase emulators when building with
+  // --dart-define=USE_FIREBASE_EMULATOR=true
+  const useEmulator = bool.fromEnvironment('USE_FIREBASE_EMULATOR', defaultValue: false);
+  if (useEmulator) {
+    // Note: Android emulators often require host '10.0.2.2' instead of 'localhost'
+    const host = 'localhost';
+    FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
+    try {
+      FirebaseAuth.instance.useAuthEmulator(host, 9099);
+    } catch (_) {}
+    debugPrint('Connected to Firebase emulators at $host');
+  }
+
   await _initializeAppCheck();
 
   runApp(const ProviderScope(child: MediConnectApp()));

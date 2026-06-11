@@ -184,13 +184,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ? const Center(child: CircularProgressIndicator())
                     : StreamBuilder<List<ChatMessage>>(
                         stream: _messagesStream,
-                        builder: (context, snapshot) {
-                          final messages = snapshot.data ?? [];
-                          if (messages.isEmpty) {
-                            return const Center(
-                              child: Text('Start a conversation', style: TextStyle(color: AppColors.textHint)),
-                            );
-                          }
+                            builder: (context, snapshot) {
+                              final messages = snapshot.data ?? [];
+                              if (messages.isEmpty) {
+                                return const Center(
+                                  child: Text('Start a conversation', style: TextStyle(color: AppColors.textHint)),
+                                );
+                              }
+
+                              // Mark incoming messages as read (non-blocking)
+                              if (_chatId != null) {
+                                Future.microtask(() => ref.read(chatFirestoreServiceProvider).markMessagesRead(_chatId!));
+                              }
                           return ListView.builder(
                             controller: _scrollController,
                             padding: const EdgeInsets.all(16),
