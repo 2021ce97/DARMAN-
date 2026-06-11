@@ -7,18 +7,31 @@
 ## ✅ WHAT'S BEEN COMPLETED
 
 ### 1. **Gemini API Key Configured** ✅
+### 1. **Gemini API Key Configured** ✅
 - **Status**: ACTIVE in `backend/.env`
-- **Key**: `AIzaSyAe2pHfMHQw9G7dU9_ZFfYhgbMfr0sVz4c`
+- **Key**: `<REDACTED — set GEMINI_API_KEY in backend/.env or Render env vars>`
 - **Features Enabled**: AI Chatbot for symptom checking
 
 ### 2. **Backend API Verified** ✅
-- **URL**: https://darman-api.onrender.com/health
-- **Status**: RESPONDING (Health check passing)
-- **Response**: `{"status":"ok","service":"MediConnect API","version":"1.0.0"}`
-- **Endpoints**: 40+ REST API endpoints ready
+### ✅ Gemini API (ACTIVE)
+- **Key**: `<REDACTED — set GEMINI_API_KEY in backend/.env or Render env vars>`
+- **Location**: `backend/.env` (local) or Render environment variables (production)
+- **Features**: AI chatbot for symptom checking
+- **Status**: Ready to use (ensure secret is not committed)
 
 ### 3. **Android Phone Connected** ✅
 - **Device**: Infinix X6831
+## "Gemini API Not Working"
+```bash
+# Verify key in backend
+cat backend/.env | grep GEMINI
+
+# If missing, add locally (DO NOT commit this file to git):
+GEMINI_API_KEY=<your-key>
+
+# Redeploy backend to Render with env var set in the dashboard or CLI
+# Do NOT commit secrets into the repository.
+```
 - **OS**: Android 13 (API 33)
 - **Device ID**: 099274037A021056
 - **Status**: Ready for APK installation

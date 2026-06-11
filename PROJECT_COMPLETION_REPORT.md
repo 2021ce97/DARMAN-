@@ -60,7 +60,7 @@
 
 **Problem:** Gemini API key not configured in backend
 
-**Provided Key:** `AIzaSyCtueu8a8qNFYUeVO3HXaVLOCpOr-hiZIw`
+**Provided Key:** `<REDACTED — GEMINI API key removed; set GEMINI_API_KEY in backend/.env or Render env vars>`
 
 **Solution Applied:**
 1. ✅ Added to `backend/.env` for local development
@@ -74,8 +74,8 @@
 const geminiApiKey = process.env.GEMINI_API_KEY;
 
 // Mobile - has default value in code
-static const String geminiApiKey = 
-  'AIzaSyCtueu8a8qNFYUeVO3HXaVLOCpOr-hiZIw';
+  static const String geminiApiKey =
+  '<REDACTED - replace with GEMINI_API_KEY via environment variables>'; 
 ```
 
 **Status:** 
